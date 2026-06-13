@@ -1,0 +1,41 @@
+name: App Testing
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - production
+
+  # Callable from other workflows (e.g. python-build.yml runs tests before publish).
+  workflow_call:
+
+jobs:
+  test:
+    name: Pytest — Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package in editable mode
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Install test dependencies
+        run: pip install -r .github/requirements/test.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short
