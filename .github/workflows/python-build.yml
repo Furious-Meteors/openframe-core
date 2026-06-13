@@ -75,10 +75,11 @@ jobs:
           name: dist
           path: dist/
 
+      # Phase 1 (new package): PYPI_API_TOKEN org secret present → token auth.
+      # Phase 2 (established package): trusted publisher configured on PyPI →
+      #   OIDC auth; the action ignores the token once OIDC takes precedence.
+      # Same workflow file, no edits needed when transitioning between phases.
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # No password needed when using OIDC trusted publishing.
-        # If you prefer an API token, uncomment the line below and set the
-        # PYPI_API_TOKEN secret in repo Settings → Secrets → Actions:
-        # with:
-        #   password: ${{ secrets.PYPI_API_TOKEN }}
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
