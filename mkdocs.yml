@@ -1,0 +1,169 @@
+site_name: openframe-core — Technical Docs
+site_description: Architecture, module reference, and developer guide for openframe-core
+site_author: Furious Meteors Engineering
+site_url: https://furious-meteors.github.io/openframe-core/
+
+docs_dir: docs
+site_dir: site
+
+# ── Theme ──────────────────────────────────────────────────────────────────
+theme:
+  name: material
+  favicon: assets/images/favicon.png
+  logo: assets/images/logo-dark.png
+
+  palette:
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tooltips
+    - toc.follow
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+extra_javascript:
+  - assets/javascripts/extra.js
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
+
+# ── Plugins ────────────────────────────────────────────────────────────────
+plugins:
+  - search:
+      separator: '[\s\-\.]+'
+
+# ── Markdown Extensions ────────────────────────────────────────────────────
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - tables
+
+# ── Extra ──────────────────────────────────────────────────────────────────
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Furious-Meteors/openframe-core
+
+# ── Navigation ─────────────────────────────────────────────────────────────
+nav:
+  - Home: index.md
+
+  - Technical:
+    - Overview:
+      - System Overview: technical/overview/system-overview.md
+      - Glossary: technical/overview/glossary.md
+      - Roadmap & Changelog: technical/overview/roadmap.md
+    - Architecture:
+      - System Architecture: technical/architecture/system-architecture.md
+      - Component Lifecycle: technical/architecture/component-lifecycle.md
+      - Data Flows: technical/architecture/data-flows.md
+      - Package Journey:
+        - Overview: technical/architecture/package-journey/index.md
+        - Template Wiring: technical/architecture/package-journey/template-wiring.md
+        - Adapter Lifecycle: technical/architecture/package-journey/adapter-lifecycle.md
+        - Tracing Flow: technical/architecture/package-journey/tracing-flow.md
+        - Error Propagation: technical/architecture/package-journey/error-propagation.md
+      - ADRs:
+        - ADR-001 Namespace: technical/architecture/adrs/adr-001-namespace.md
+        - ADR-002 Hexagonal Architecture: technical/architecture/adrs/adr-002-hexagonal.md
+        - ADR-003 Async Strategy: technical/architecture/adrs/adr-003-async.md
+        - ADR-004 Pydantic Settings: technical/architecture/adrs/adr-004-pydantic.md
+        - ADR-005 Middleware Telemetry: technical/architecture/adrs/adr-005-middleware.md
+      - Design Decisions: technical/architecture/design-decisions.md
+    - Infrastructure:
+      - Platform: technical/infrastructure/platform.md
+      - Networking: technical/infrastructure/networking.md
+      - Storage: technical/infrastructure/storage.md
+    - Deployment:
+      - Environments: technical/deployment/environments.md
+      - Secrets & Config: technical/deployment/secrets-and-config.md
+      - CI/CD: technical/deployment/cicd.md
+    - Operations:
+      - Overview: technical/operations/index.md
+      - Monitoring: technical/operations/monitoring.md
+      - Runbooks:
+        - Adapter Connection Failure: technical/operations/runbooks/adapter-connection-failure.md
+        - Queue Consumer Stuck: technical/operations/runbooks/queue-consumer-stuck.md
+        - Telemetry Export Failing: technical/operations/runbooks/telemetry-export-failing.md
+        - Postgres Pool Exhausted: technical/operations/runbooks/postgres-pool-exhausted.md
+        - Redis Connection Lost: technical/operations/runbooks/redis-connection-lost.md
+        - Modal Cold Start Spike: technical/operations/runbooks/modal-cold-start-spike.md
+
+  - Code:
+    - Getting Started: code/getting-started/index.md
+    - Modules:
+      - Overview: code/modules/index.md
+      - exceptions: code/modules/exceptions.md
+      - config: code/modules/config.md
+      - ports: code/modules/ports.md
+      - health: code/modules/health.md
+      - telemetry: code/modules/telemetry.md
+      - tracing: code/modules/tracing.md
+      - middleware: code/modules/middleware.md
+    - CI/CD:
+      - Pipeline: code/cicd/pipeline.md
+
+  - Developer Guide:
+    - Quick Start: developer-guide/quick-start/index.md
+    - How It Works: developer-guide/how-it-works.md
+    - Explore the System: developer-guide/explore.md
+    - First Code Change: developer-guide/first-change.md
+    - Local Development: developer-guide/local-dev.md
+    - Debugging Guide: developer-guide/debugging.md
