@@ -1,0 +1,72 @@
+# Adapter Connection Failure
+
+An adapter raises `AdapterConnectionError` on every operation. The service is returning 500s.
+
+---
+
+## Symptoms
+
+- All requests to routes that use a database adapter return HTTP 500
+- Logs show `[postgres.connect] Cannot reach Postgres` or similar
+- `ping()` returns `False`
+- OTel spans show `StatusCode.ERROR` on `repository.*.get` / `repository.*.create`
+
+---
+
+## Diagnosis
+
+**1. Verify the backend is reachable.**
+
+```bash
+# From within the Modal container or local environment
+python -c "
+import asyncio, asyncpg
+asyncio.run(asyncpg.connect(dsn='<DATABASE_URL>'))
+print('connected')
+"
+```
+
+**2. Check `is_ready()` directly.**
+
+```python
+from openframe.adapters.db.postgres import PostgresRepository, PostgresSettings
+import asyncio
+
+repo = PostgresRepository(PostgresSettings())
+print(asyncio.run(repo.ping()))       # True / False
+print(asyncio.run(repo.is_ready()))   # True / False
+```
+
+**3. Verify env vars are present.**
+
+```bash
+modal app logs <app-name> | grep "DATABASE_URL\|POOL"
+```
+
+`AdapterConfigurationError` at startup (not `AdapterConnectionError`) means a required env var is missing — check `OPENFRAME_ENV`, `DATABASE_URL`, and any adapter-specific vars.
+
+---
+
+## Recovery
+
+If the backend is down: restore the backend first. The adapter's connection pool will reconnect automatically when the backend returns.
+
+If env vars are missing: update the Modal secret, redeploy:
+
+```bash
+modal secret update <secret-name> DATABASE_URL=<correct-value>
+modal deploy modal_app.py
+```
+
+If a config change caused the breakage: roll back via git and redeploy:
+
+```bash
+git revert HEAD
+git push origin production
+```
+
+---
+
+## Prevention
+
+Call `adapter.is_ready()` in the `lifespan` handler and refuse startup if it returns `False`. A service that cannot reach its database should not start serving traffic.
