@@ -1,0 +1,565 @@
+/* ==========================================================================
+   FlamAI Unreal Lipsync — Documentation Stylesheet
+   Colour system: Green (#6DB33F) / Black (#0A0A0A) / White (#F0F0F0)
+   ========================================================================== */
+
+/* ── 1. Colour System ──────────────────────────────────────────────────── */
+
+:root {
+  /* Green scale */
+  --fl-green-light:    #8CC63F;
+  --fl-green-base:     #6DB33F;
+  --fl-green-dark:     #4E8A2A;
+  --fl-green-glow:     rgba(109, 179, 63, 0.15);
+  --fl-green-border:   rgba(109, 179, 63, 0.25);
+
+  /* Neutral scale */
+  --fl-black:          #0A0A0A;
+  --fl-surface:        #141414;
+  --fl-surface-raised: #1E1E1E;
+  --fl-border:         #2A2A2A;
+  --fl-white:          #F0F0F0;
+  --fl-muted:          #888888;
+
+  /* Material overrides — primary = green */
+  --md-primary-fg-color:        var(--fl-green-base);
+  --md-primary-fg-color--light: var(--fl-green-light);
+  --md-primary-fg-color--dark:  var(--fl-green-dark);
+  --md-accent-fg-color:         var(--fl-green-light);
+}
+
+/* Dark theme */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color:        var(--fl-black);
+  --md-default-bg-color--light: var(--fl-surface);
+  --md-default-bg-color--dark:  #060606;
+  --md-code-bg-color:           var(--fl-surface);
+  --md-typeset-a-color:         var(--fl-green-light);
+  --md-typeset-color:           var(--fl-white);
+}
+
+/* Light theme */
+[data-md-color-scheme="default"] {
+  --md-typeset-a-color:         var(--fl-green-dark);
+}
+
+/* ── 2. Fluid Typography ───────────────────────────────────────────────── */
+
+:root {
+  --fl-text-xs:   clamp(0.6rem,   0.55rem + 0.2vw,  0.7rem);
+  --fl-text-sm:   clamp(0.7rem,   0.65rem + 0.2vw,  0.8rem);
+  --fl-text-base: clamp(0.8rem,   0.75rem + 0.25vw, 0.9rem);
+  --fl-text-lg:   clamp(0.9rem,   0.85rem + 0.4vw,  1.1rem);
+  --fl-text-xl:   clamp(1.1rem,   0.95rem + 0.8vw,  1.5rem);
+  --fl-text-2xl:  clamp(1.3rem,   1.1rem  + 1.2vw,  2rem);
+  --fl-text-3xl:  clamp(1.5rem,   1.25rem + 1.6vw,  2.5rem);
+}
+
+.md-typeset {
+  font-size: var(--fl-text-base);
+  line-height: 1.75;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  text-align: left;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+
+.md-typeset h1 {
+  font-size: var(--fl-text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.md-typeset h2 {
+  font-size: var(--fl-text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  border-bottom: 2px solid var(--fl-green-border);
+  padding-bottom: 0.3em;
+  margin-top: 2em;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h2 {
+  border-color: var(--fl-green-border);
+}
+
+.md-typeset h3 {
+  font-size: var(--fl-text-xl);
+  font-weight: 600;
+}
+
+.md-typeset h4 {
+  font-size: var(--fl-text-lg);
+  font-weight: 600;
+}
+
+/* ── 3. Three-Column Fluid Layout ──────────────────────────────────────── */
+
+/* Left nav — scales with viewport */
+.md-sidebar--primary {
+  width: clamp(242px, 18vw, 320px);
+}
+
+/* Right TOC — scales with viewport */
+.md-sidebar--secondary {
+  width: clamp(200px, 16vw, 300px);
+}
+
+/* Content — fills remaining space between both sidebars */
+.md-content {
+  max-width: none;
+}
+
+.md-grid {
+  max-width: none;
+  margin: 0;
+}
+
+/* Inner content readable line length within the fluid column */
+.md-content__inner {
+  max-width: clamp(640px, 72%, 1200px);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 2vw, 2.5rem);
+}
+
+/* Large screens — expand all columns */
+@media screen and (min-width: 1440px) {
+  .md-sidebar--primary {
+    width: clamp(300px, 20vw, 380px);
+  }
+
+  .md-sidebar--secondary {
+    width: clamp(260px, 17vw, 340px);
+  }
+
+  .md-content__inner {
+    max-width: clamp(800px, 76%, 1400px);
+  }
+}
+
+/* 4K — everything scales proportionally */
+@media screen and (min-width: 1920px) {
+  .md-sidebar--primary {
+    width: clamp(340px, 18vw, 480px);
+  }
+
+  .md-sidebar--secondary {
+    width: clamp(300px, 16vw, 420px);
+  }
+
+  .md-content__inner {
+    max-width: clamp(900px, 68vw, 1800px);
+  }
+}
+
+/* Tablet — collapse sidebars, content full width */
+@media screen and (max-width: 1024px) {
+  .md-content__inner {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+}
+
+/* ── 4. Header & Navigation Tabs ───────────────────────────────────────── */
+
+.md-header {
+  background-color: #0A0A0A;
+  border-bottom: 1px solid rgba(109, 179, 63, 0.2);
+}
+
+[data-md-color-scheme="default"] .md-header {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #D8D8D8;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* Header text colour per theme */
+.md-header .md-header__title,
+.md-header .md-tabs__link {
+  color: var(--fl-white);
+}
+
+[data-md-color-scheme="default"] .md-header .md-header__title,
+[data-md-color-scheme="default"] .md-header .md-tabs__link {
+  color: #1A1A1A;
+}
+
+.md-tabs {
+  background-color: #111111;
+  border-bottom: 1px solid rgba(109, 179, 63, 0.15);
+}
+
+[data-md-color-scheme="default"] .md-tabs {
+  background-color: #F4F4F4;
+  border-bottom: 1px solid #D0D0D0;
+}
+
+.md-tabs__link {
+  opacity: 0.65;
+  font-size: var(--fl-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.md-tabs__link--active,
+.md-tabs__link:hover {
+  opacity: 1;
+  color: var(--fl-green-base);
+}
+
+/* ── 5. Sidebar Navigation ─────────────────────────────────────────────── */
+
+.md-nav__title {
+  font-size: var(--fl-text-xs);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.md-nav__link {
+  font-size: var(--fl-text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.md-nav__item--active > .md-nav__link {
+  color: var(--fl-green-base);
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item--active > .md-nav__link {
+  color: var(--fl-green-light);
+}
+
+.md-nav--secondary .md-nav__item--active > .md-nav__link {
+  color: var(--fl-green-base);
+  font-weight: 600;
+}
+
+[data-md-color-scheme="slate"] .md-nav--secondary .md-nav__item--active > .md-nav__link {
+  color: var(--fl-green-light);
+}
+
+/* ── 6. Code Blocks — wide, full content column ────────────────────────── */
+
+/* Code blocks break out to full content column width */
+.md-typeset pre {
+  margin-left:  calc(-1 * clamp(1rem, 2vw, 2.5rem));
+  margin-right: calc(-1 * clamp(1rem, 2vw, 2.5rem));
+  border-radius: 0;
+  overflow-x: auto;
+}
+
+.highlight pre,
+.md-typeset pre {
+  border-radius: 6px;
+  font-size: var(--fl-text-sm);
+  line-height: 1.65;
+  text-align: left;
+}
+
+[data-md-color-scheme="slate"] .highlight pre,
+[data-md-color-scheme="slate"] .md-typeset pre {
+  border: 1px solid var(--fl-green-border);
+  background-color: var(--fl-surface);
+}
+
+/* Line numbers */
+.linenodiv pre {
+  opacity: 0.3;
+}
+
+/* ── 7. Inline Code ─────────────────────────────────────────────────────── */
+
+.md-typeset code {
+  border-radius: 4px;
+  font-size: 0.82em;
+  padding: 0.1em 0.35em;
+  white-space: nowrap;
+}
+
+[data-md-color-scheme="slate"] .md-typeset code {
+  background-color: var(--fl-green-glow);
+  color: var(--fl-green-light);
+  border: 1px solid var(--fl-green-border);
+}
+
+[data-md-color-scheme="default"] .md-typeset code {
+  background-color: rgba(109, 179, 63, 0.08);
+  color: var(--fl-green-dark);
+}
+
+/* ── 8. Muted file path — h1 subtitle pattern ──────────────────────────── */
+/* Targets: `src/path/file.py` · summary  immediately after h1 */
+
+.md-content article h1 + p > code:first-child {
+  font-size: var(--fl-text-xs);
+  opacity: 0.5;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--fl-muted);
+  white-space: nowrap;
+}
+
+/* ── 9. Tables ──────────────────────────────────────────────────────────── */
+
+/* Horizontal scroll wrapper */
+.md-typeset table:not([class]) {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+  border: 1px solid var(--fl-border);
+  font-size: var(--fl-text-xs);
+  text-align: left;
+}
+
+[data-md-color-scheme="default"] .md-typeset table:not([class]) {
+  border-color: #D0D0D0;
+}
+
+/* Sticky headers */
+.md-typeset table:not([class]) th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--fl-green-dark);
+  color: #fff;
+  font-size: var(--fl-text-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+[data-md-color-scheme="default"] .md-typeset table:not([class]) th {
+  background-color: var(--fl-green-base);
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) {
+  background-color: var(--fl-surface);
+}
+
+[data-md-color-scheme="default"] .md-typeset table:not([class]) tr:nth-child(even) {
+  background-color: #F5F5F5;
+}
+
+.md-typeset table:not([class]) td {
+  white-space: nowrap;
+  text-align: left;
+}
+
+/* Allow wrapping on description/notes columns */
+.md-typeset table:not([class]) td:last-child {
+  white-space: normal;
+}
+
+/* ── 10. Images — auto-scaling ──────────────────────────────────────────── */
+
+.md-typeset img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+}
+
+/* Diagrams — allow full content width */
+.md-typeset img[alt*="diagram"],
+.md-typeset img[alt*="architecture"],
+.md-typeset img[alt*="flow"] {
+  width: 100%;
+  max-width: none;
+}
+
+/* ── 11. Search ─────────────────────────────────────────────────────────── */
+
+.md-search-result mark {
+  background-color: rgba(109, 179, 63, 0.3);
+  color: inherit;
+  border-radius: 2px;
+}
+
+/* ── 12. Copy button ────────────────────────────────────────────────────── */
+
+.md-clipboard {
+  color: var(--fl-green-base);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.md-clipboard:hover {
+  opacity: 1;
+  color: var(--fl-green-light);
+}
+
+/* ── 13. Admonitions ────────────────────────────────────────────────────── */
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 8px;
+  border-left-width: 4px;
+  font-size: var(--fl-text-sm);
+}
+
+/* ── 14. Home page hero h1 ──────────────────────────────────────────────── */
+
+.md-content article h1:first-child {
+  background: linear-gradient(135deg, var(--fl-green-base), var(--fl-green-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 15. Footer ─────────────────────────────────────────────────────────── */
+
+.md-footer {
+  background-color: var(--fl-surface);
+  border-top: 1px solid var(--fl-border);
+}
+
+[data-md-color-scheme="default"] .md-footer {
+  background-color: #EFEFEF;
+  border-top: 1px solid #D0D0D0;
+}
+
+.md-footer-meta {
+  background-color: var(--fl-black);
+}
+
+[data-md-color-scheme="default"] .md-footer-meta {
+  background-color: #E0E0E0;
+}
+
+/* ── 16. Scrollbar ──────────────────────────────────────────────────────── */
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-track {
+  background: var(--fl-black);
+}
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-thumb {
+  background: rgba(109, 179, 63, 0.35);
+  border-radius: 3px;
+}
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(109, 179, 63, 0.65);
+}
+
+/* ── 17. Logo ───────────────────────────────────────────────────────────── */
+
+.md-header__button.md-logo {
+  padding: 0;
+  margin: 0.2rem 0.6rem 0.2rem 0;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  width: auto;
+  height: clamp(24px, 2vw, 32px);
+  border-radius: 0;
+}
+
+/* Dark mode — white brain visible on dark header */
+[data-md-color-scheme="slate"] .md-header__button.md-logo img {
+  filter: none;
+  content: url('../images/logo-dark.png');
+}
+
+/* Light mode — white brain becomes black, visible on light header */
+[data-md-color-scheme="default"] .md-header__button.md-logo img {
+  filter: none;
+  content: url('../images/logo-light.png');
+}
+
+/* ── 18. Print / PDF export ─────────────────────────────────────────────── */
+
+@media print {
+  /* Force light background */
+  [data-md-color-scheme="slate"] {
+    --md-default-bg-color: #ffffff;
+    --md-typeset-color:    #000000;
+  }
+
+  /* Hide navigation chrome */
+  .md-header,
+  .md-tabs,
+  .md-sidebar,
+  .md-footer,
+  .md-search,
+  .md-clipboard {
+    display: none !important;
+  }
+
+  /* Full width content */
+  .md-content,
+  .md-content__inner {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Code blocks */
+  .md-typeset pre {
+    margin: 0 !important;
+    border: 1px solid #ccc !important;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Tables */
+  .md-typeset table:not([class]) {
+    display: table;
+    overflow: visible;
+    border: 1px solid #ccc;
+  }
+
+  .md-typeset table:not([class]) th {
+    background-color: #4E8A2A !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  .md-typeset h2 {
+    page-break-before: auto;
+    break-before: auto;
+  }
+
+  .md-typeset h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  .md-typeset pre,
+  .md-typeset table {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
