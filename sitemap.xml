@@ -2,194 +2,194 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/cicd/pipeline/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/getting-started/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/config/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/exceptions/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/health/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/middleware/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/ports/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/telemetry/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/code/modules/tracing/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/developer-guide/debugging/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/developer-guide/explore/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/developer-guide/first-change/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/developer-guide/how-it-works/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/developer-guide/local-dev/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/developer-guide/quick-start/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/component-lifecycle/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/data-flows/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/design-decisions/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/system-architecture/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-001-namespace/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-002-hexagonal/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-003-async/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-004-pydantic/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-005-middleware/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/package-journey/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/package-journey/adapter-lifecycle/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/package-journey/error-propagation/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/package-journey/template-wiring/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/architecture/package-journey/tracing-flow/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/deployment/cicd/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/deployment/environments/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/deployment/secrets-and-config/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/infrastructure/networking/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/infrastructure/platform/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/infrastructure/storage/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/monitoring/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/runbooks/adapter-connection-failure/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/runbooks/modal-cold-start-spike/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/runbooks/postgres-pool-exhausted/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/runbooks/queue-consumer-stuck/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/runbooks/redis-connection-lost/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/operations/runbooks/telemetry-export-failing/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/overview/glossary/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/overview/roadmap/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
     <url>
          <loc>https://furious-meteors.github.io/openframe-core/technical/overview/system-overview/</loc>
-         <lastmod>2026-06-14</lastmod>
+         <lastmod>2026-06-15</lastmod>
     </url>
 </urlset>
