@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://pypi.org/project/openframe-core/"><img src="https://img.shields.io/pypi/v/openframe-core?color=6DB33F&labelColor=1a1a1a&label=PyPI" alt="PyPI version"/></a>
   <a href="https://pypi.org/project/openframe-core/"><img src="https://img.shields.io/pypi/pyversions/openframe-core?color=6DB33F&labelColor=1a1a1a" alt="Python versions"/></a>
-  <a href="https://github.com/Furious-Meteors/openframe-core/actions/workflows/app-test.yml"><img src="https://img.shields.io/github/actions/workflow/status/Furious-Meteors/openframe-core/app-test.yml?branch=production&color=6DB33F&labelColor=1a1a1a&label=tests" alt="Tests"/></a>
+  <a href="https://github.com/Furious-Meteors/openframe-core/actions/workflows/python-build.yml"><img src="https://img.shields.io/github/actions/workflow/status/Furious-Meteors/openframe-core/python-build.yml?branch=production&color=6DB33F&labelColor=1a1a1a&label=tests" alt="Tests"/></a>
   <a href="https://github.com/Furious-Meteors/openframe-core/blob/production/LICENSE"><img src="https://img.shields.io/badge/license-MIT-6DB33F?labelColor=1a1a1a" alt="License"/></a>
   <a href="https://furious-meteors.github.io/openframe-core/"><img src="https://img.shields.io/badge/docs-live-6DB33F?labelColor=1a1a1a" alt="Docs"/></a>
 </p>
