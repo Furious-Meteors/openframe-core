@@ -6,6 +6,18 @@ Pure ASGI telemetry middleware for the OpenFrame ecosystem.
 Records an OTel span and HTTP metrics for every inbound HTTP request.
 Compatible with any ASGI framework: FastAPI, Starlette, Litestar, or bare ASGI.
 
+Cross-service trace correlation:
+    Extracts an incoming W3C ``traceparent``/``tracestate`` header (if present)
+    via ``TraceContextTextMapPropagator`` BEFORE starting this request's span,
+    so the span becomes a child of whatever upstream service or message
+    producer started the trace — instead of always starting a disconnected
+    root span. If no incoming traceparent is present (e.g. this is the
+    entrypoint of the trace), a new root span is started as before. This is
+    one half of cross-service correlation; the other half is the producer/
+    consumer side of any outbound call (HTTP client, Kafka message headers)
+    injecting its own outgoing traceparent — see
+    ``openframe.adapters.queue.kafka``'s producer/consumer for that side.
+
 CRITICAL — setup_telemetry():
     This middleware does NOT call ``setup_telemetry()``. Call ``setup_telemetry()``
     once at application startup (e.g. in a ``lifespan`` handler). This middleware
@@ -49,6 +61,7 @@ import uuid
 from typing import Any
 
 from opentelemetry.trace import StatusCode
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from openframe.core.middleware.types import ASGIApp, ASGIMessage, ASGIScope, Receive, Send
 from openframe.core.telemetry.setup import get_meter, get_tracer
@@ -56,6 +69,7 @@ from openframe.core.telemetry.setup import get_meter, get_tracer
 __all__ = ["TelemetryMiddleware"]
 
 _logger = logging.getLogger(__name__)
+_propagator = TraceContextTextMapPropagator()
 
 
 class TelemetryMiddleware:
@@ -252,7 +266,17 @@ class TelemetryMiddleware:
         instr["active_requests"].add(1, base_labels)
         t_start = time.perf_counter()
 
-        with get_tracer().start_as_current_span(f"HTTP {method} {route}") as span:
+        # Extract any incoming W3C traceparent/tracestate so this request's
+        # span becomes a CHILD of whatever upstream service called it,
+        # instead of always starting a disconnected root trace. This is the
+        # cross-service half of trace correlation — pairs with the same
+        # injection/extraction adapters.queue.kafka producer/consumer must
+        # do on their side of a message boundary.
+        parent_ctx = _propagator.extract(header_map)
+
+        with get_tracer().start_as_current_span(
+            f"HTTP {method} {route}", context=parent_ctx
+        ) as span:
             span.set_attribute("http.method", method)
             span.set_attribute("http.target", path)
             span.set_attribute("http.route", route)
