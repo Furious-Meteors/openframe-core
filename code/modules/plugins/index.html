@@ -12,13 +12,13 @@
         <meta name="author" content="Furious Meteors Engineering">
       
       
-        <link rel="canonical" href="https://furious-meteors.github.io/openframe-core/code/modules/tracing/">
+        <link rel="canonical" href="https://furious-meteors.github.io/openframe-core/code/modules/plugins/">
       
       
-        <link rel="prev" href="../telemetry/">
+        <link rel="prev" href="../middleware/">
       
       
-        <link rel="next" href="../middleware/">
+        <link rel="next" href="../runtime/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>tracing - openframe-core — Technical Docs</title>
+        <title>plugins - openframe-core — Technical Docs</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tracing" class="md-skip">
+        <a href="#plugins" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              tracing
+              plugins
             
           </span>
         </div>
@@ -2331,6 +2331,62 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../middleware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    middleware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -2350,7 +2406,7 @@
   <span class="md-ellipsis">
     
   
-    tracing
+    plugins
   
 
     
@@ -2368,7 +2424,7 @@
   <span class="md-ellipsis">
     
   
-    tracing
+    plugins
   
 
     
@@ -2417,10 +2473,49 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#tracingproxy" class="md-nav__link">
+  <a href="#pluginregistry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        TracingProxy
+        PluginRegistry
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-same-capability-ports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple same-capability ports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-applicationbootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With ApplicationBootstrap
       
     </span>
   </a>
@@ -2436,62 +2531,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../middleware/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    middleware
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plugins/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    plugins
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2900,10 +2939,49 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#tracingproxy" class="md-nav__link">
+  <a href="#pluginregistry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        TracingProxy
+        PluginRegistry
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-same-capability-ports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple same-capability ports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-applicationbootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With ApplicationBootstrap
       
     </span>
   </a>
@@ -2998,7 +3076,7 @@
 
 
   
-    <a href="https://github.com/Furious-Meteors/openframe-core/edit/production/docs/code/modules/tracing.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/Furious-Meteors/openframe-core/edit/production/docs/code/modules/plugins.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -3007,25 +3085,107 @@
     
       
     
-    <a href="https://github.com/Furious-Meteors/openframe-core/raw/production/docs/code/modules/tracing.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/Furious-Meteors/openframe-core/raw/production/docs/code/modules/plugins.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="tracing">tracing<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h1>
-<p><code>openframe/core/tracing/proxy.py</code> · Generic async telemetry sidecar.</p>
+<h1 id="plugins">plugins<a class="headerlink" href="#plugins" title="Permanent link">&para;</a></h1>
+<p><code>openframe/core/plugins/</code> · Managed port registry with typed <code>Capability</code> lookups.</p>
 <hr />
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p><code>TracingProxy</code> wraps any object and intercepts every async method call, creating a child OTel span around it. Neither the adapter nor the service layer need to know telemetry exists. Apply it in <code>deps.py</code> after constructing the real adapter.</p>
-<p>The wrapped method is resolved fresh on every invocation — safe for reconnecting adapters (Postgres pools, Redis clients) that replace their own method objects after reconnect.</p>
+<p><code>PluginRegistry</code> is the single managed lifecycle coordinator. Any <code>BasePort</code> can be registered. The registry initialises ports in registration order, shuts them down in LIFO order, and provides type-safe <code>Capability</code> enum lookups. A "plugin" is just a registered <code>BasePort</code> — there is no separate plugin protocol.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">PluginRegistry</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
+</span></code></pre></div>
 <hr />
 <h2 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link">&para;</a></h2>
-<h3 id="tracingproxy"><code>TracingProxy</code><a class="headerlink" href="#tracingproxy" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">TracingProxy</span><span class="p">:</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<h3 id="pluginregistry"><code>PluginRegistry</code><a class="headerlink" href="#pluginregistry" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">PluginRegistry</span><span class="p">:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="n">port</span><span class="p">:</span> <span class="n">BasePort</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">initialize_all</span><span class="p">(</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="n">principal</span><span class="p">:</span> <span class="n">PrincipalContext</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        <span class="n">tenant</span><span class="p">:</span> <span class="n">TenantContext</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">shutdown_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasePort</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BasePort</span><span class="p">]:</span> <span class="o">...</span>
 </span></code></pre></div>
+<hr />
+<h4 id="registerport-config"><code>register(port, config)</code><a class="headerlink" href="#registerport-config" title="Permanent link">&para;</a></h4>
+<p>Register a <code>BasePort</code> with optional config. The config dict is passed into <code>PluginContext.config</code> when <code>initialize_all()</code> is called.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><code>BasePort</code></td>
+<td>—</td>
+<td>Any <code>BasePort</code> instance (including <code>BaseRepository</code>, <code>BaseProducer</code>, <code>BaseConsumer</code>)</td>
+</tr>
+<tr>
+<td><code>config</code></td>
+<td><code>dict[str, Any] \| None</code></td>
+<td><code>None</code></td>
+<td>Port-specific configuration dict, e.g. <code>{"dsn": "postgres://..."}</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Raises:</strong> <code>DuplicatePluginError</code> — if the same port instance is registered more than once.</p>
+<hr />
+<h4 id="initialize_allprincipal-tenant"><code>initialize_all(principal, tenant)</code><a class="headerlink" href="#initialize_allprincipal-tenant" title="Permanent link">&para;</a></h4>
+<p>Call <code>port.initialize(PluginContext)</code> on every registered port in registration order. Rolls back (shuts down already-initialised ports) if any port raises.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>principal</code></td>
+<td><code>PrincipalContext \| None</code></td>
+<td><code>None</code></td>
+<td>Optional caller identity threaded into <code>PluginContext</code></td>
+</tr>
+<tr>
+<td><code>tenant</code></td>
+<td><code>TenantContext \| None</code></td>
+<td><code>None</code></td>
+<td>Optional tenant identity threaded into <code>PluginContext</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Raises:</strong> <code>PluginInitializationError</code> — wrapping the original exception from <code>port.initialize()</code>, after rolling back.</p>
+<hr />
+<h4 id="shutdown_all"><code>shutdown_all()</code><a class="headerlink" href="#shutdown_all" title="Permanent link">&para;</a></h4>
+<p>Call <code>port.shutdown()</code> on every initialised port in LIFO order. Never raises — swallows all exceptions (logs them).</p>
+<hr />
+<h4 id="getcapability"><code>get(capability)</code><a class="headerlink" href="#getcapability" title="Permanent link">&para;</a></h4>
+<p>Return the single registered port for the given <code>Capability</code>. <strong>Strict</strong>: raises when more than one port shares the capability.</p>
 <p><strong>Parameters:</strong></p>
 <table>
 <thead>
@@ -3037,39 +3197,95 @@
 </thead>
 <tbody>
 <tr>
-<td><code>wrapped</code></td>
-<td><code>object</code></td>
-<td>The object whose async methods will be instrumented</td>
-</tr>
-<tr>
-<td><code>prefix</code></td>
-<td><code>str</code></td>
-<td>Prefix prepended to every span name, e.g. <code>"repository.item"</code> or <code>"queue.kafka"</code></td>
+<td><code>capability</code></td>
+<td><code>Capability</code></td>
+<td>The capability to look up</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Span naming:</strong> <code>{prefix}.{method_name}</code> — e.g. <code>"repository.item.get"</code>, <code>"queue.kafka.publish"</code></p>
-<p><strong>Behaviour:</strong></p>
-<ul>
-<li>Async methods — wrapped with an OTel child span. Closure cached in <code>_cache</code> to avoid repeated allocation.</li>
-<li>Sync methods — returned directly, no span, no cache.</li>
-<li>Method resolution — <code>getattr(wrapped, name)</code> called on every async invocation, not snapshot at first access. Safe for reconnecting drivers.</li>
-</ul>
-<p><strong>Usage:</strong></p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.tracing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracingProxy</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.adapters.db.postgres</span><span class="w"> </span><span class="kn">import</span> <span class="n">PostgresRepository</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">repo</span> <span class="o">=</span> <span class="n">PostgresRepository</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">traced</span> <span class="o">=</span> <span class="n">TracingProxy</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;repository.item&quot;</span><span class="p">)</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># traced.get(entity_id) → creates span &quot;repository.item.get&quot;</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># traced.create(entity)  → creates span &quot;repository.item.create&quot;</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># traced.sync_method()   → passes through, no span</span>
+<p><strong>Returns:</strong> <code>BasePort</code></p>
+<p><strong>Raises:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Exception</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PluginNotFoundError</code></td>
+<td>No port registered for this capability</td>
+</tr>
+<tr>
+<td><code>AmbiguousCapabilityError</code></td>
+<td>More than one port registered for this capability</td>
+</tr>
+</tbody>
+</table>
+<p>Use <code>get_all()</code> when multiple same-capability ports is the intended configuration (e.g. primary + replica persistence pair).</p>
+<hr />
+<h4 id="get_allcapability"><code>get_all(capability)</code><a class="headerlink" href="#get_allcapability" title="Permanent link">&para;</a></h4>
+<p>Return all registered ports for the given <code>Capability</code>. Returns an empty list when none are registered.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>capability</code></td>
+<td><code>Capability</code></td>
+<td>The capability to look up</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> <code>list[BasePort]</code></p>
+<hr />
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">PluginRegistry</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">PluginRegistry</span><span class="p">()</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Register during application startup</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dsn&quot;</span><span class="p">:</span> <span class="s2">&quot;postgres://...&quot;</span><span class="p">})</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">RedisCache</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;redis://...&quot;</span><span class="p">})</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># Initialize all ports (forward order)</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="k">await</span> <span class="n">registry</span><span class="o">.</span><span class="n">initialize_all</span><span class="p">()</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1"># Look up by capability</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">repo</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>   <span class="c1"># strict — raises on &gt;1 match</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">cache</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">CACHE</span><span class="p">)</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1"># Serve traffic...</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="c1"># Shutdown all ports (LIFO order)</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="k">await</span> <span class="n">registry</span><span class="o">.</span><span class="n">shutdown_all</span><span class="p">()</span>
 </span></code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">TracingProxy and health()</p>
-<p><code>TracingProxy</code> transparently proxies all async methods — including <code>health()</code>. A <code>health()</code> call on the proxy will produce a child span named <code>{prefix}.health</code>. This is usually the correct behaviour (health calls are traceable). If you need the raw <code>PluginHealth</code> without a span, call <code>health()</code> directly on the underlying port (accessible via <code>proxy._wrapped</code>).</p>
-</div>
+<h3 id="multiple-same-capability-ports">Multiple same-capability ports<a class="headerlink" href="#multiple-same-capability-ports" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PrimaryPostgres</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ReplicaPostgres</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># get() would raise AmbiguousCapabilityError — use get_all()</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">primary</span><span class="p">,</span> <span class="n">replica</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="with-applicationbootstrap">With ApplicationBootstrap<a class="headerlink" href="#with-applicationbootstrap" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApplicationBootstrap</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyApp</span><span class="p">(</span><span class="n">ApplicationBootstrap</span><span class="p">):</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dsn&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="k">async</span> <span class="k">with</span> <span class="n">MyApp</span><span class="p">()</span> <span class="k">as</span> <span class="n">app</span><span class="p">:</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">repo</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
+</span></code></pre></div>
 
 
 
@@ -3107,7 +3323,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../telemetry/" class="md-footer__link md-footer__link--prev" aria-label="Previous: telemetry">
+          <a href="../middleware/" class="md-footer__link md-footer__link--prev" aria-label="Previous: middleware">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3117,20 +3333,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                telemetry
+                middleware
               </div>
             </div>
           </a>
         
         
           
-          <a href="../middleware/" class="md-footer__link md-footer__link--next" aria-label="Next: middleware">
+          <a href="../runtime/" class="md-footer__link md-footer__link--next" aria-label="Next: runtime">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                middleware
+                runtime
               </div>
             </div>
             <div class="md-footer__button md-icon">
