@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### CI/CD
+
+- Upgraded all GitHub Actions to Node.js 24-compatible versions, resolving
+  Node.js 20 deprecation warnings across all three workflows:
+  - `actions/checkout` v4 → **v5**
+  - `actions/setup-python` v5 → **v6**
+  - `actions/upload-artifact` v4 → **v6**
+  - `actions/download-artifact` v4 → **v7**
+- Removed invalid `fetch-depth` input from the `actions/upload-artifact`
+  step in `python-build.yml` — this parameter belongs on `actions/checkout`,
+  not on the artifact upload action.
+- Renamed `skip_existing` → `skip-existing` in `pypa/gh-action-pypi-publish`
+  to comply with the action's current kebab-case input convention.
+- Added `attestations: false` to the PyPI publish step; token-based
+  authentication disables Trusted Publishing, which also disables provenance
+  attestation generation — the flag must be set explicitly to suppress the
+  spurious "attestations input ignored" warning. Remove this flag (or set
+  `attestations: true`) once Trusted Publishing (OIDC) is configured on PyPI.
+
 ---
 
 ## [3.0.0] — 2026-07-07
