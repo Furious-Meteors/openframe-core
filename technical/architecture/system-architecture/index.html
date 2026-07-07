@@ -811,6 +811,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#architecture-scorecard-v300" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Scorecard — v3.0.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture Scorecard — v3.0.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolved-gaps-post-v300" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved gaps (post-v3.0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deployment-topology" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2951,6 +2979,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#architecture-scorecard-v300" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Scorecard — v3.0.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture Scorecard — v3.0.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolved-gaps-post-v300" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved gaps (post-v3.0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deployment-topology" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3235,6 +3291,66 @@ at startup and serves a request.</p>
     D--&gt;&gt;MW: entity
     MW-&gt;&gt;MW: set span status OK, record metrics
     MW--&gt;&gt;MW: inject x-session-id, emit log</code></pre>
+<hr />
+<h2 id="architecture-scorecard-v300">Architecture Scorecard — v3.0.0<a class="headerlink" href="#architecture-scorecard-v300" title="Permanent link">&para;</a></h2>
+<p>Scores reflect the state of <code>openframe-core</code> after the v3.0.0 release.
+Each dimension is rated /10. "Why it moved" is the concrete reason the
+score changed from the pre-v3 baseline.</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Pre-v3</th>
+<th>v3.0.0</th>
+<th>Why it moved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Contract design</td>
+<td>9.0</td>
+<td><strong>9.5</strong></td>
+<td><code>Capability</code> enum closes the open-string gap; <code>BasePort</code> unification removes the dual-mechanism ambiguity (lifecycle-free port + separate <code>OpenFramePlugin</code>).</td>
+</tr>
+<tr>
+<td>Error model</td>
+<td>9.0</td>
+<td><strong>9.5</strong></td>
+<td><code>StrEnum</code> + decentralised <code>domain.kind</code> convention is the right extensibility model for a multi-package ecosystem — downstream packages declare their own codes without touching the core enum.</td>
+</tr>
+<tr>
+<td>Testing infrastructure</td>
+<td>—</td>
+<td><strong>9.0</strong></td>
+<td><code>testing/contracts/</code> and <code>testing/fakes/</code> centralise what every adapter was duplicating independently. Highest-leverage addition for the ecosystem as a whole.</td>
+</tr>
+<tr>
+<td>Composition / wiring</td>
+<td>5.0</td>
+<td><strong>7.0</strong></td>
+<td><code>ApplicationBootstrap</code> names the third composition option. Held back: <code>shutdown_telemetry()</code> is still absent — lifecycle is not complete until the OTel SDK is flushed and shut down on process exit (see open gap below).</td>
+</tr>
+<tr>
+<td>Telemetry</td>
+<td>7.0</td>
+<td><strong>8.0</strong></td>
+<td>Sidecar architecture, bounded-queue metric export, and <code>record_error()</code> seam are the right design. Held back: no shutdown flush hook yet — spans are silently dropped on every normal process shutdown.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="resolved-gaps-post-v300">Resolved gaps (post-v3.0.0)<a class="headerlink" href="#resolved-gaps-post-v300" title="Permanent link">&para;</a></h3>
+<p>Both gaps identified in the v3.0.0 scorecard review have been resolved:</p>
+<p><strong>Gap 1 — <code>shutdown_telemetry()</code> ✓</strong></p>
+<p><code>openframe.core.telemetry.shutdown_telemetry()</code> now flushes and shuts
+down both the <code>TracerProvider</code> (forcing <code>BatchSpanProcessor</code> export) and
+the <code>MeterProvider</code> before returning. <code>ApplicationBootstrap.stop()</code> calls
+it automatically. Templates that do not use <code>ApplicationBootstrap</code> should
+call it in the <code>lifespan</code> teardown path.</p>
+<p><strong>Gap 2 — <code>openframe.core.tracing.propagation</code> ✓</strong></p>
+<p><code>openframe/core/tracing/propagation.py</code> is now shipped. Exposes
+<code>inject(carrier)</code> and <code>extract(carrier)</code> as named wrappers around the OTel
+propagator API — all broker adapters (Kafka, NATS, RabbitMQ, …) import
+from this single module.</p>
 <hr />
 <h2 id="deployment-topology">Deployment Topology<a class="headerlink" href="#deployment-topology" title="Permanent link">&para;</a></h2>
 <p><code>openframe-core</code> is a library — it has no runtime process. It is installed
