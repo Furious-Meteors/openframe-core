@@ -7,7 +7,7 @@ family (registry/lifecycle failures) — derives from it, so a single
 `except OpenFrameError` is a catch point for the whole platform.
 
 The hierarchy lives in one package,
-[`openframe/core/exceptions/`](../../../openframe/core/exceptions/); when this
+[`openframe/core/exceptions/`](https://github.com/Furious-Meteors/openframe-core/blob/production/openframe/core/exceptions/); when this
 page and the code disagree, the code is authoritative.
 
 ---

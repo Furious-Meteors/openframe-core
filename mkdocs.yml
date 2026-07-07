@@ -204,9 +204,3 @@ nav:
     - Local Development: developer-guide/local-dev.md
     - Debugging Guide: developer-guide/debugging.md
 
-  - Contributing:
-    - Documentation Guide: contributing/documentation.md
-    - Theme and Graphics: contributing/theme-and-graphics.md
-    - Responsive Content: contributing/responsive-content.md
-
-  - Changelog: changelog.md

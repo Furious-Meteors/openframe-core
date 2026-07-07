@@ -5,7 +5,7 @@ typed vocabulary every `BasePort`'s `capability` attribute is drawn from,
 and the type `PluginRegistry.get()`/`get_all()` key their lookups on
 (ADR-006). This page is the human-readable reference derived from that
 enum; when the two disagree, the enum in
-[`openframe/core/contracts/capability.py`](../../../openframe/core/contracts/capability.py)
+[`openframe/core/contracts/capability.py`](https://github.com/Furious-Meteors/openframe-core/blob/production/openframe/core/contracts/capability.py)
 is authoritative.
 
 ---
