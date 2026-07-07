@@ -3047,7 +3047,9 @@
 
 
 <h1 id="cicd">CI/CD<a class="headerlink" href="#cicd" title="Permanent link">&para;</a></h1>
-<p>Three GitHub Actions workflows ship with <code>openframe-core</code>. All run on the <code>production</code> branch.</p>
+<p>Three GitHub Actions workflows ship with <code>openframe-core</code>. All workflow
+files live in <code>.github/workflows/</code> and use Node.js 24-compatible action
+versions.</p>
 <hr />
 <h2 id="workflow-overview">Workflow Overview<a class="headerlink" href="#workflow-overview" title="Permanent link">&para;</a></h2>
 <table>
@@ -3055,48 +3057,94 @@
 <tr>
 <th>Workflow</th>
 <th>Trigger</th>
-<th>Job</th>
+<th>Jobs</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>app-test.yml</code></td>
-<td>push to any branch, PR</td>
-<td>Run pytest suite</td>
+<td>PR to <code>dev</code> / <code>production</code>, or called by <code>python-build.yml</code></td>
+<td>Run pytest matrix (Python 3.11 – 3.14)</td>
 </tr>
 <tr>
 <td><code>python-build.yml</code></td>
 <td>push to <code>production</code></td>
-<td>Build wheel + sdist, publish to PyPI</td>
+<td>Gate on tests → build wheel + sdist → publish to PyPI</td>
 </tr>
 <tr>
 <td><code>auto-docs.yml</code></td>
 <td>push to <code>production</code>, PR to <code>dev</code>/<code>production</code></td>
-<td>Build + deploy MkDocs to GitHub Pages</td>
+<td>Build MkDocs (validate) → deploy to GitHub Pages</td>
 </tr>
 </tbody>
 </table>
 <hr />
 <h2 id="test-workflow">Test Workflow<a class="headerlink" href="#test-workflow" title="Permanent link">&para;</a></h2>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># .github/workflows/app-test.yml</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pip install -r .github/requirements/test.txt</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest tests/ -v</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">strategy</span><span class="p">:</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">fail-fast</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">matrix</span><span class="p">:</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;3.11&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;3.12&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;3.13&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;3.14&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">steps</span><span class="p">:</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v5</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v6</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pip install -e .</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pip install -r .github/requirements/test.txt</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest tests/ -v --tb=short</span>
 </span></code></pre></div>
-<p>112 tests across 8 modules. All must pass before <code>python-build.yml</code> publishes.</p>
+<p>All four Python legs run independently — a failure in one does not abort
+the others, giving a full compatibility picture. Python 3.14 is fetched
+with <code>allow-prereleases: true</code> while it remains a release candidate on
+GitHub-hosted runners.</p>
+<p>The workflow is declared with <code>workflow_call:</code> so <code>python-build.yml</code> can
+invoke it as a gate before the build job starts.</p>
 <hr />
 <h2 id="publish-workflow">Publish Workflow<a class="headerlink" href="#publish-workflow" title="Permanent link">&para;</a></h2>
-<p>Builds with <code>hatch build</code>, publishes with <code>pypa/gh-action-pypi-publish</code>. Uses <code>skip-existing: true</code> to handle re-runs gracefully — PyPI rejects duplicate file uploads with a 400; the flag converts this to a warning.</p>
+<p>Three sequential, gated jobs:</p>
+<ol>
+<li><strong>test</strong> — calls <code>app-test.yml</code>; all matrix legs must pass.</li>
+<li><strong>build</strong> — runs <code>python -m build</code>, uploads <code>dist/</code> as a workflow
+   artifact (<code>actions/upload-artifact@v6</code>, retained for 7 days).</li>
+<li><strong>publish</strong> — downloads the artifact (<code>actions/download-artifact@v7</code>)
+   and publishes via <code>pypa/gh-action-pypi-publish</code>. Only runs on the
+   <code>production</code> branch.</li>
+</ol>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># publish step options</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nt">skip-existing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># re-runs don&#39;t fail on already-uploaded files</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">attestations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">   </span><span class="c1"># token auth disables Trusted Publishing; must opt out explicitly</span>
+</span></code></pre></div>
 <div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Switch to Trusted Publishing. The current workflow uses <code>PYPI_API_TOKEN</code>. Trusted Publishing removes the secret entirely and uses OIDC. Setup URL: <code>https://pypi.org/manage/project/openframe-core/settings/publishing/</code></p>
+<p class="admonition-title">Migrate to Trusted Publishing</p>
+<p>The workflow currently authenticates with <code>PYPI_API_TOKEN</code>
+(Phase 1 / token auth). Trusted Publishing (OIDC) removes the secret
+entirely and re-enables provenance attestations. Once configured on
+PyPI, remove the <code>password:</code> input and set <code>attestations: true</code>.</p>
+<p>Setup URL: <code>https://pypi.org/manage/project/openframe-core/settings/publishing/</code></p>
+<p>Publisher settings:
+- Workflow: <code>python-build.yml</code>
+- Environment: <code>pypi</code></p>
 </div>
 <hr />
 <h2 id="docs-workflow">Docs Workflow<a class="headerlink" href="#docs-workflow" title="Permanent link">&para;</a></h2>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># .github/workflows/auto-docs.yml</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mkdocs build --strict</span><span class="w">   </span><span class="c1"># on PRs — validates docs compile</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mkdocs gh-deploy --force</span><span class="w">  </span><span class="c1"># on production push — deploys to gh-pages</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># .github/workflows/auto-docs.yml</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># build-docs job (runs on every PR — validates docs compile cleanly)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v5</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v6</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mkdocs build --strict</span><span class="w">   </span><span class="c1"># --strict treats warnings as errors</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># deploy-docs job (production push only)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v5</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">fetch-depth</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">             </span><span class="c1"># full history for git-revision-date plugins</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v6</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mkdocs gh-deploy --force</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span><span class="nt">permissions: contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span><span class="w">  </span><span class="c1"># push to gh-pages branch</span>
 </span></code></pre></div>
-<p><code>--strict</code> treats all MkDocs warnings as errors, catching broken links and missing pages before they reach production.</p>
+<p><code>--strict</code> treats all MkDocs warnings as errors, catching broken links and
+missing pages before they reach production. The deploy job is guarded by
+<code>if: github.event_name == 'push' &amp;&amp; github.ref == 'refs/heads/production'</code>
+so PRs never trigger a deploy.</p>
 
 
 
