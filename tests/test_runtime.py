@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from openframe.core.plugins import OpenFramePlugin, PluginContext, PluginHealth, PluginStatus
+from openframe.core.contracts import BasePort, Capability, PluginContext, PluginHealth, PluginStatus
 from openframe.core.runtime import ApplicationBootstrap
 
 
@@ -17,12 +17,12 @@ from openframe.core.runtime import ApplicationBootstrap
 
 
 class SimplePlugin:
-    """Minimal plugin for bootstrap tests."""
+    """Minimal port for bootstrap tests."""
 
     def __init__(
         self,
         name: str = "simple",
-        capability: str = "test",
+        capability: Capability = Capability.CACHE,
         *,
         fail_init: bool = False,
     ) -> None:
@@ -32,11 +32,13 @@ class SimplePlugin:
         self._fail_init = fail_init
         self.initialized = False
         self.shutdown_called = False
+        self.received_context: PluginContext | None = None
 
     async def initialize(self, context: PluginContext) -> None:
         if self._fail_init:
             raise RuntimeError(f"Deliberate init failure: {self.name!r}")
         self.initialized = True
+        self.received_context = context
 
     async def shutdown(self) -> None:
         self.shutdown_called = True
@@ -52,7 +54,7 @@ class SimplePlugin:
 
 
 async def test_bootstrap_configure_called_on_start() -> None:
-    """start() invokes configure() before initializing plugins."""
+    """start() invokes configure() before initializing ports."""
     configure_calls: list[bool] = []
 
     class MyBootstrap(ApplicationBootstrap):
@@ -72,8 +74,8 @@ async def test_bootstrap_configure_called_on_start() -> None:
 
 
 async def test_bootstrap_get_returns_plugin_after_start() -> None:
-    """get() returns the registered plugin after start() completes."""
-    plugin = SimplePlugin(name="svc", capability="test")
+    """get() returns the registered port after start() completes."""
+    plugin = SimplePlugin(name="svc", capability=Capability.CACHE)
 
     class MyBootstrap(ApplicationBootstrap):
         def configure(self) -> None:
@@ -82,11 +84,23 @@ async def test_bootstrap_get_returns_plugin_after_start() -> None:
     bootstrap = MyBootstrap()
     await bootstrap.start()
     try:
-        result = bootstrap.get("test")
+        result = bootstrap.get(Capability.CACHE)
         assert result is plugin
-        assert isinstance(result, OpenFramePlugin)
+        assert isinstance(result, BasePort)
     finally:
         await bootstrap.stop()
+
+
+async def test_bootstrap_register_threads_config() -> None:
+    """register(config=...) threads the config through to PluginContext."""
+    plugin = SimplePlugin(name="configured", capability=Capability.PERSISTENCE)
+
+    class MyBootstrap(ApplicationBootstrap):
+        def configure(self) -> None:
+            self.register(plugin, config={"dsn": "postgres://localhost"})
+
+    async with MyBootstrap():
+        assert plugin.received_context.config == {"dsn": "postgres://localhost"}
 
 
 # ---------------------------------------------------------------------------
@@ -96,14 +110,14 @@ async def test_bootstrap_get_returns_plugin_after_start() -> None:
 
 async def test_bootstrap_context_manager_starts_and_stops() -> None:
     """async-with ApplicationBootstrap starts and stops cleanly."""
-    plugin = SimplePlugin(name="cm", capability="test")
+    plugin = SimplePlugin(name="cm", capability=Capability.CACHE)
 
     class MyBootstrap(ApplicationBootstrap):
         def configure(self) -> None:
             self.register(plugin)
 
     async with MyBootstrap() as bootstrap:
-        result = bootstrap.get("test")
+        result = bootstrap.get(Capability.CACHE)
         assert result is plugin
         assert plugin.initialized is True
 
@@ -122,7 +136,7 @@ async def test_bootstrap_stop_called_on_exception() -> None:
     class TrackingPlugin:
         name = "tracker"
         version = "1.0.0"
-        capability = "test"
+        capability = Capability.CACHE
 
         async def initialize(self, context: PluginContext) -> None:
             pass
@@ -150,8 +164,8 @@ async def test_bootstrap_stop_called_on_exception() -> None:
 
 
 async def test_bootstrap_health_delegates_to_registry() -> None:
-    """health() returns a dict of PluginHealth keyed by plugin name."""
-    plugin = SimplePlugin(name="health-test", capability="observability")
+    """health() returns a dict of PluginHealth keyed by port name."""
+    plugin = SimplePlugin(name="health-test", capability=Capability.TRANSPORT)
 
     class MyBootstrap(ApplicationBootstrap):
         def configure(self) -> None:
@@ -183,9 +197,9 @@ async def test_bootstrap_default_configure_is_noop() -> None:
 
 
 async def test_bootstrap_multiple_plugins_all_started() -> None:
-    """All registered plugins are initialized and shut down in lifecycle order."""
-    p1 = SimplePlugin(name="p1", capability="persistence")
-    p2 = SimplePlugin(name="p2", capability="cache")
+    """All registered ports are initialized and shut down in lifecycle order."""
+    p1 = SimplePlugin(name="p1", capability=Capability.PERSISTENCE)
+    p2 = SimplePlugin(name="p2", capability=Capability.CACHE)
 
     class MyBootstrap(ApplicationBootstrap):
         def configure(self) -> None:

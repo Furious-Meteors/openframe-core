@@ -1,11 +1,15 @@
 """
 openframe/core/ports/consumer.py
 ===================================
-Generic message consumer port for the OpenFrame ecosystem.
+Generic message consumer port for the OpenFrame ecosystem (ADR-006).
 
-``BaseConsumer[T]`` is the structural contract every message-queue consume
-adapter implements. Queue adapters (Kafka, SQS, PubSub, Redis Streams)
-satisfy this protocol by structural subtyping — no inheritance needed.
+``BaseConsumer[T]`` extends
+:class:`~openframe.core.contracts.port.BasePort` directly — it is
+``Identity + Lifecycle`` plus its own domain methods. There is exactly one
+lifecycle-aware definition of this port.
+
+Queue adapters (Kafka, SQS, PubSub, Redis Streams) satisfy this protocol by
+structural subtyping — no inheritance needed.
 
 Do NOT import ``AsyncIterator`` here — it is not used in this interface.
 The consumer uses a push-based handler model (``subscribe`` + callback),
@@ -16,13 +20,16 @@ Runtime isinstance check::
     isinstance(consumer, BaseConsumer)       # ✓ works
     isinstance(consumer, BaseConsumer[str])  # ✗ raises TypeError
 
-Dependency order: this module imports only from Python stdlib.
-No openframe.core imports.
+Dependency order:
+    contracts/port  → contracts/identity + contracts/lifecycle
+    ports/consumer  → contracts/port
 """
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from typing import Protocol, TypeVar, runtime_checkable
+
+from openframe.core.contracts.port import BasePort
 
 __all__ = ["BaseConsumer"]
 
@@ -30,13 +37,14 @@ T = TypeVar("T")
 
 
 @runtime_checkable
-class BaseConsumer(Protocol[T]):
+class BaseConsumer(BasePort, Protocol[T]):
     """
-    Generic message consumer port.
+    Generic message consumer port. ``BasePort`` (Identity + Lifecycle)
+    plus domain-specific subscribe/ack/nack methods.
 
     Queue adapters implement this protocol structurally — no inheritance
-    needed. Any class with matching async method signatures satisfies
-    ``BaseConsumer``.
+    needed. Any class with matching async method signatures, plus the
+    ``BasePort`` members, satisfies ``BaseConsumer``.
 
     Type parameter ``T`` is the message payload type.
 
@@ -51,6 +59,9 @@ class BaseConsumer(Protocol[T]):
 
         isinstance(consumer, BaseConsumer)       # ✓ works
         isinstance(consumer, BaseConsumer[str])  # ✗ raises TypeError
+
+    Plus, inherited from ``BasePort``: ``name``, ``version``, ``capability``,
+    ``initialize``, ``shutdown``, ``health``.
     """
 
     async def subscribe(

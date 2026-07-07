@@ -1,21 +1,24 @@
 """
 openframe/core/testing/fakes/repository.py
 ============================================
-InMemoryRepository — a reusable test double.
+InMemoryRepository — a reusable test double (ADR-006).
 
-Satisfies :class:`~openframe.core.ports.BaseRepository` and
-:class:`~openframe.core.health.HealthCheck` structurally (no inheritance).
-Thread-safe for asyncio single-threaded use.  Zero external dependencies.
+Satisfies :class:`~openframe.core.ports.BaseRepository` structurally (no
+inheritance) — including the ``BasePort`` identity/lifecycle members it now
+extends. Thread-safe for asyncio single-threaded use. Zero external
+dependencies.
 
 .. stability: beta
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/fakes/repository → ports + health + exceptions
+    testing/fakes/repository → contracts + ports + exceptions
 """
 from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
+
+from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
 
 __all__ = ["InMemoryRepository"]
 
@@ -53,15 +56,17 @@ class InMemoryRepository(Generic[T]):
     - ``create()`` — stores the entity exactly as passed (no ID generation).
     - ``update()`` — returns ``None`` for missing entities.
     - ``delete()`` — returns ``False`` for missing entities.
-    - ``ping()``   — always returns ``True`` (configurable for failure
-                     testing via ``ping_healthy=False``).
-    - ``is_ready()`` — always returns ``True`` (configurable via
-                       ``ready_healthy=False``).
+    - ``initialize()`` / ``shutdown()`` — no-ops that flip an internal
+      ``_initialized`` flag; ``shutdown()`` is idempotent and safe to call
+      before ``initialize()``.
+    - ``health()`` — returns ``PluginHealth(status=READY)`` once initialized
+                     and healthy, ``FAILED`` when constructed with
+                     ``healthy=False`` (configurable for failure-path
+                     testing).
 
-    Satisfies both :class:`~openframe.core.ports.BaseRepository` and
-    :class:`~openframe.core.health.HealthCheck` via structural subtyping —
-    ``isinstance(repo, BaseRepository)`` and
-    ``isinstance(repo, HealthCheck)`` both return ``True``.
+    Satisfies :class:`~openframe.core.ports.BaseRepository` (which now
+    extends ``BasePort``) via structural subtyping —
+    ``isinstance(repo, BaseRepository)`` returns ``True``.
 
     .. stability: beta
 
@@ -72,8 +77,9 @@ class InMemoryRepository(Generic[T]):
         assert await repo.get("1") == item
 
         # Failure simulation
-        repo = InMemoryRepository(ping_healthy=False)
-        assert await repo.ping() is False
+        repo = InMemoryRepository(healthy=False)
+        health = await repo.health()
+        assert health.status is PluginStatus.FAILED
 
         # Direct store access (test assertions only)
         assert "1" in repo.store
@@ -82,19 +88,27 @@ class InMemoryRepository(Generic[T]):
     def __init__(
         self,
         *,
-        ping_healthy: bool = True,
-        ready_healthy: bool = True,
+        name: str = "in-memory-repository",
+        version: str = "1.0.0",
+        capability: Capability = Capability.PERSISTENCE,
+        healthy: bool = True,
     ) -> None:
         """
         Initialise an empty repository.
 
         Args:
-            ping_healthy:  When ``False``, :meth:`ping` returns ``False``.
-            ready_healthy: When ``False``, :meth:`is_ready` returns ``False``.
+            name:       Identity name — see :class:`~openframe.core.contracts.identity.Identity`.
+            version:    Identity version string.
+            capability: Identity capability. Defaults to ``Capability.PERSISTENCE``.
+            healthy:    When ``False``, :meth:`health` reports
+                        ``PluginStatus.FAILED`` instead of ``READY``.
         """
         self._store: dict[str, T] = {}
-        self._ping_healthy = ping_healthy
-        self._ready_healthy = ready_healthy
+        self.name = name
+        self.version = version
+        self.capability = capability
+        self._healthy = healthy
+        self._initialized = False
 
     # ------------------------------------------------------------------
     # BaseRepository[T] interface
@@ -185,26 +199,46 @@ class InMemoryRepository(Generic[T]):
         return True
 
     # ------------------------------------------------------------------
-    # HealthCheck interface
+    # BasePort (Identity + Lifecycle) interface
     # ------------------------------------------------------------------
 
-    async def ping(self) -> bool:
+    async def initialize(self, context: PluginContext) -> None:
         """
-        Low-cost liveness check.
+        Mark the repository as initialized.
 
-        Returns the value of ``ping_healthy`` passed at construction.
-        Always returns without raising.
-        """
-        return self._ping_healthy
+        No-op beyond flipping the internal flag consulted by :meth:`health`
+        — the in-memory store is already usable immediately.
 
-    async def is_ready(self) -> bool:
+        Args:
+            context: Ignored beyond being a valid ``PluginContext`` — the
+                     fake has no external configuration to read.
         """
-        Full readiness check.
+        self._initialized = True
 
-        Returns the value of ``ready_healthy`` passed at construction.
-        Always returns without raising.
+    async def shutdown(self) -> None:
         """
-        return self._ready_healthy
+        Mark the repository as no longer initialized.
+
+        Idempotent — safe to call multiple times, including before
+        :meth:`initialize` has ever been called. Does not clear the store;
+        use :meth:`clear` for that.
+        """
+        self._initialized = False
+
+    async def health(self) -> PluginHealth:
+        """
+        Return the current health snapshot.
+
+        Returns ``PluginStatus.READY`` when initialized and ``healthy=True``
+        was passed at construction; ``PluginStatus.FAILED`` when
+        ``healthy=False``; ``PluginStatus.REGISTERED`` when not yet
+        initialized. Always returns without raising.
+        """
+        if not self._healthy:
+            return PluginHealth(status=PluginStatus.FAILED, message="simulated failure")
+        if not self._initialized:
+            return PluginHealth(status=PluginStatus.REGISTERED)
+        return PluginHealth(status=PluginStatus.READY)
 
     # ------------------------------------------------------------------
     # Test helpers

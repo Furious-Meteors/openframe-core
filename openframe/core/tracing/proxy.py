@@ -33,7 +33,7 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
-from openframe.core.telemetry.setup import get_tracer
+from openframe.core.telemetry.setup import get_tracer, record_error
 
 __all__ = ["TracingProxy"]
 
@@ -128,8 +128,14 @@ class TracingProxy:
             current = getattr(
                 object.__getattribute__(self, "_wrapped"), name
             )
-            with get_tracer().start_as_current_span(f"{prefix}.{name}"):
-                return await current(*args, **kwargs)
+            with get_tracer().start_as_current_span(f"{prefix}.{name}") as span:
+                try:
+                    return await current(*args, **kwargs)
+                except Exception as err:
+                    # Boundary seam: record the error onto this span (and count
+                    # it once) as it bubbles up from the adapter, then re-raise.
+                    record_error(err, span=span)
+                    raise
 
         cache[name] = _traced
         return _traced

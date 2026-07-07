@@ -1,14 +1,15 @@
 """
 tests/test_exceptions.py
 ==========================
-Tests for openframe.core.exceptions — the AdapterError hierarchy.
+Tests for openframe.core.exceptions — the unified error hierarchy.
 
 Covers:
-- All 6 classes instantiate correctly
-- All 5 subclasses are subclasses of AdapterError
-- __str__ output format (not a tuple repr)
-- All four instance attributes are accessible
-- Cause chaining behaviour
+- The OpenFrameError root: fields, defaults, catch-all behaviour
+- The ErrorCode / Severity taxonomy
+- The AdapterError family (backend/infrastructure failures)
+- The PluginError family (registry/lifecycle failures)
+- Semantics-as-data (code / severity / retryable)
+- Constructor back-compat, __str__ output format, cause chaining
 """
 from __future__ import annotations
 
@@ -21,6 +22,14 @@ from openframe.core.exceptions import (
     AdapterNotFoundError,
     AdapterQueryError,
     AdapterTimeoutError,
+    AmbiguousCapabilityError,
+    DuplicatePluginError,
+    ErrorCode,
+    OpenFrameError,
+    PluginError,
+    PluginInitializationError,
+    PluginNotFoundError,
+    Severity,
 )
 
 # ---------------------------------------------------------------------------
@@ -216,3 +225,175 @@ def test_cause_chaining_pattern() -> None:
             ) from exc
     assert exc_info.value.__cause__ is original
     assert exc_info.value.cause is original
+
+
+# ---------------------------------------------------------------------------
+# OpenFrameError root
+# ---------------------------------------------------------------------------
+
+
+def test_openframe_error_instantiates_with_defaults() -> None:
+    exc = OpenFrameError("generic failure")
+    assert exc.message == "generic failure"
+    assert exc.code == ErrorCode.OPENFRAME
+    assert exc.severity is Severity.ERROR
+    assert exc.retryable is False
+    assert exc.correlation_id is None
+    assert exc.context == {}
+    assert exc.cause is None
+
+
+def test_openframe_error_str_is_message() -> None:
+    assert str(OpenFrameError("boom")) == "boom"
+
+
+def test_openframe_error_is_an_exception() -> None:
+    assert isinstance(OpenFrameError("x"), Exception)
+
+
+def test_openframe_error_accepts_per_instance_overrides() -> None:
+    cause = ValueError("root")
+    exc = OpenFrameError(
+        "custom",
+        code="ai.rate_limited",
+        severity=Severity.WARNING,
+        retryable=True,
+        correlation_id="abc123",
+        context={"provider": "anthropic"},
+        cause=cause,
+    )
+    assert exc.code == "ai.rate_limited"
+    assert exc.severity is Severity.WARNING
+    assert exc.retryable is True
+    assert exc.correlation_id == "abc123"
+    assert exc.context == {"provider": "anthropic"}
+    assert exc.cause is cause
+
+
+def test_openframe_error_code_is_plain_str() -> None:
+    """code must serialise as a plain string, not 'ErrorCode.X'."""
+    exc = AdapterConnectionError("x", adapter="pg", operation="connect")
+    assert str(exc.code) == "adapter.connection"
+    assert isinstance(exc.code, str)
+
+
+def test_openframe_error_context_is_mutable_for_enrichment() -> None:
+    """Upper-layer seams enrich context/correlation_id on the way up."""
+    exc = OpenFrameError("x")
+    exc.correlation_id = "trace-1"
+    exc.context["extra"] = "value"
+    assert exc.correlation_id == "trace-1"
+    assert exc.context["extra"] == "value"
+
+
+# ---------------------------------------------------------------------------
+# Catch-all: every family is catchable as OpenFrameError
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        AdapterError("m", "pg", "get"),
+        AdapterConnectionError("m", "pg", "connect"),
+        AdapterNotFoundError("m", "pg", "get"),
+        PluginError("m", "p1"),
+        DuplicatePluginError("m", "p1"),
+        AmbiguousCapabilityError("m", "p1", "persistence", ["p1", "p2"]),
+    ],
+)
+def test_every_family_is_catchable_as_openframe_error(exc: OpenFrameError) -> None:
+    assert isinstance(exc, OpenFrameError)
+
+
+def test_adapter_error_caught_as_openframe_error() -> None:
+    with pytest.raises(OpenFrameError):
+        raise AdapterQueryError("q", "pg", "list")
+
+
+def test_plugin_error_caught_as_openframe_error() -> None:
+    with pytest.raises(OpenFrameError):
+        raise DuplicatePluginError("dup", plugin_name="p1")
+
+
+# ---------------------------------------------------------------------------
+# Adapter family semantics (code / retryable)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("exc_class", "expected_code", "expected_retryable"),
+    [
+        (AdapterError, ErrorCode.ADAPTER, False),
+        (AdapterConnectionError, ErrorCode.ADAPTER_CONNECTION, True),
+        (AdapterQueryError, ErrorCode.ADAPTER_QUERY, False),
+        (AdapterNotFoundError, ErrorCode.ADAPTER_NOT_FOUND, False),
+        (AdapterConfigurationError, ErrorCode.ADAPTER_CONFIGURATION, False),
+        (AdapterTimeoutError, ErrorCode.ADAPTER_TIMEOUT, True),
+    ],
+)
+def test_adapter_family_code_and_retryable(
+    exc_class: type[AdapterError],
+    expected_code: str,
+    expected_retryable: bool,
+) -> None:
+    exc = exc_class("m", "pg", "op")
+    assert exc.code == expected_code
+    assert exc.retryable is expected_retryable
+
+
+def test_adapter_error_records_adapter_and_operation_in_context() -> None:
+    exc = AdapterError("m", adapter="postgres", operation="get")
+    assert exc.context["adapter"] == "postgres"
+    assert exc.context["operation"] == "get"
+
+
+# ---------------------------------------------------------------------------
+# Plugin family semantics
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("exc_class", "expected_code"),
+    [
+        (PluginError, ErrorCode.PLUGIN),
+        (PluginInitializationError, ErrorCode.PLUGIN_INITIALIZATION),
+        (PluginNotFoundError, ErrorCode.PLUGIN_NOT_FOUND),
+        (DuplicatePluginError, ErrorCode.PLUGIN_DUPLICATE),
+    ],
+)
+def test_plugin_family_codes(exc_class: type[PluginError], expected_code: str) -> None:
+    exc = exc_class("m", plugin_name="p1")
+    assert exc.code == expected_code
+    assert exc.plugin_name == "p1"
+
+
+def test_ambiguous_capability_error_preserves_extra_attributes() -> None:
+    exc = AmbiguousCapabilityError(
+        "ambiguous",
+        plugin_name="pg-main",
+        capability="persistence",
+        matches=["pg-main", "pg-replica"],
+    )
+    assert exc.code == ErrorCode.CAPABILITY_AMBIGUOUS
+    assert exc.plugin_name == "pg-main"
+    assert exc.capability == "persistence"
+    assert exc.matches == ["pg-main", "pg-replica"]
+    assert isinstance(exc, PluginError)
+
+
+# ---------------------------------------------------------------------------
+# Taxonomy
+# ---------------------------------------------------------------------------
+
+
+def test_error_code_values_follow_domain_kind_convention() -> None:
+    for member in ErrorCode:
+        assert "." in member.value
+        assert member.value == member.value.lower()
+
+
+def test_severity_values_are_plain_strings() -> None:
+    assert str(Severity.WARNING) == "warning"
+    assert str(Severity.ERROR) == "error"
+    assert str(Severity.CRITICAL) == "critical"

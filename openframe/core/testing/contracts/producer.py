@@ -1,10 +1,14 @@
 """
 openframe/core/testing/contracts/producer.py
 ==============================================
-ProducerContractTests — reusable pytest base class.
+ProducerContractTests — reusable pytest base class (ADR-006).
 
 Every ``openframe-adapters-queue-*`` package must inherit this class and
 pass every test.
+
+Builds on :class:`~openframe.core.testing.contracts.port.PortContractTests`
+for the full ``BasePort`` (identity + lifecycle) contract, adding
+domain-specific publish assertions on top.
 
 No top-level pytest import — this module can be imported without pytest
 installed.
@@ -13,7 +17,7 @@ installed.
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/contracts/producer → testing/fakes + ports
+    testing/contracts/producer → testing/contracts/port + ports + testing/fakes
 
 Subclass usage::
 
@@ -22,24 +26,39 @@ Subclass usage::
         def producer(self) -> FakeProducer:
             return FakeProducer()
 
+        @pytest.fixture
+        def port(self, producer) -> FakeProducer:
+            return producer
+
     class TestKafkaProducer(ProducerContractTests):
         @pytest.fixture
         async def producer(self, kafka_settings) -> KafkaProducer:
             return KafkaProducer(kafka_settings)
+
+        @pytest.fixture
+        def port(self, producer):
+            return producer
 """
 from __future__ import annotations
+
+from openframe.core.testing.contracts.port import PortContractTests
 
 __all__ = ["ProducerContractTests"]
 
 
-class ProducerContractTests:
+class ProducerContractTests(PortContractTests):
     """
     Reusable pytest base class for producer contract tests.
 
-    Subclasses must provide one pytest fixture:
+    Subclasses must provide two pytest fixtures:
 
     ``producer``
         A :class:`~openframe.core.ports.BaseProducer` instance to test.
+
+    ``port``
+        Typically an alias of ``producer`` (``return producer``) — lets
+        the inherited :class:`~openframe.core.testing.contracts.port.PortContractTests`
+        identity/lifecycle checks run against the same instance.
 
     .. stability: beta
     """
@@ -63,5 +82,6 @@ class ProducerContractTests:
 
         assert isinstance(producer, BaseProducer), (
             f"{type(producer).__name__} does not satisfy BaseProducer. "
-            "Ensure it implements async publish, publish_batch, and close."
+            "Ensure it implements async publish, publish_batch, and close, "
+            "plus the BasePort identity/lifecycle members."
         )

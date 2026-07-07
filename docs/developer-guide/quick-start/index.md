@@ -1,6 +1,6 @@
 # Quick Start
 
-A working integration of `openframe-core` in 5 minutes. No Modal account required.
+A working integration of `openframe-core` v3.0 in 5 minutes. No Modal account required.
 
 ---
 
@@ -8,10 +8,10 @@ A working integration of `openframe-core` in 5 minutes. No Modal account require
 
 A FastAPI app that:
 
-- Loads settings from env vars via `BaseAdapterSettings`
-- Wires an in-memory repository via `TracingProxy`
+- Wires an in-memory repository through `PluginRegistry` with managed lifecycle
 - Records OTel spans locally (no external backend needed)
 - Passes requests through `TelemetryMiddleware`
+- Demonstrates the `BasePort` identity + lifecycle contract
 
 ---
 
@@ -35,27 +35,42 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 
-from openframe.core.config import BaseAdapterSettings
+from openframe.core.contracts import (
+    Capability,
+    PluginContext,
+    PluginHealth,
+    PluginStatus,
+)
 from openframe.core.exceptions import AdapterNotFoundError
-from openframe.core.health import HealthCheck
 from openframe.core.middleware import TelemetryMiddleware
+from openframe.core.plugins import PluginRegistry
 from openframe.core.ports import BaseRepository
 from openframe.core.telemetry import record_lifecycle_event, setup_telemetry
 from openframe.core.tracing import TracingProxy
 
 
-# ── Settings ───────────────────────────────────────────────────────────────
-
-class AppSettings(BaseAdapterSettings):
-    app_title: str = "openframe-quickstart"
-
-
-# ── In-memory repository (satisfies BaseRepository structurally) ───────────
+# ── In-memory repository — satisfies BaseRepository (BasePort) structurally ──
 
 class InMemoryRepo:
+    # Identity
+    name = "in-memory-items"
+    version = "1.0.0"
+    capability = Capability.PERSISTENCE
+
     def __init__(self) -> None:
         self._store: dict[str, dict[str, Any]] = {}
 
+    # Lifecycle
+    async def initialize(self, context: PluginContext) -> None:
+        pass   # no-op for in-memory
+
+    async def shutdown(self) -> None:
+        self._store.clear()
+
+    async def health(self) -> PluginHealth:
+        return PluginHealth(status=PluginStatus.READY)
+
+    # Domain methods
     async def get(self, entity_id: str) -> dict | None:
         return self._store.get(entity_id)
 
@@ -77,36 +92,35 @@ class InMemoryRepo:
     async def delete(self, entity_id: str) -> bool:
         return self._store.pop(entity_id, None) is not None
 
-    async def ping(self) -> bool:
-        return True
 
-    async def is_ready(self) -> bool:
-        return True
-
-
-# ── Verify structural typing ────────────────────────────────────────────────
+# ── Verify structural typing ─────────────────────────────────────────────────
 
 assert isinstance(InMemoryRepo(), BaseRepository)
-assert isinstance(InMemoryRepo(), HealthCheck)
 
 
-# ── App wiring ──────────────────────────────────────────────────────────────
+# ── Registry and wiring ──────────────────────────────────────────────────────
 
-_repo = TracingProxy(InMemoryRepo(), prefix="repository.item")
+registry = PluginRegistry()
+_raw_repo = InMemoryRepo()
+registry.register(_raw_repo)
+
+_repo = TracingProxy(_raw_repo, prefix="repository.item")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_telemetry()                          # no-op if OTEL_EXPORTER_OTLP_ENDPOINT absent
     record_lifecycle_event("cold_start")
+    await registry.initialize_all()            # calls repo.initialize(PluginContext())
     yield
+    await registry.shutdown_all()              # calls repo.shutdown() in LIFO order
 
 
 app = FastAPI(title="openframe-quickstart", lifespan=lifespan)
 app.add_middleware(TelemetryMiddleware)
 
 
-# ── Routes ──────────────────────────────────────────────────────────────────
+# ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.get("/items/{item_id}")
 async def get_item(item_id: str):
@@ -123,7 +137,9 @@ async def create_item(body: dict):
 
 @app.get("/health")
 async def health():
-    return {"ping": await InMemoryRepo().ping()}
+    port = registry.get(Capability.PERSISTENCE)
+    h = await port.health()
+    return {"status": h.status, "name": port.name}
 ```
 
 ---
@@ -149,6 +165,10 @@ curl -X POST http://localhost:8000/items \
 curl http://localhost:8000/items/abc-123
 # → {"name": "hello", "id": "abc-123"}
 
+# Check port health via registry
+curl http://localhost:8000/health
+# → {"status": "ready", "name": "in-memory-items"}
+
 # Check x-session-id header from TelemetryMiddleware
 curl -v http://localhost:8000/health 2>&1 | grep x-session-id
 # → x-session-id: <uuid>
@@ -169,4 +189,4 @@ export OTEL_SERVICE_NAME="openframe-quickstart"
 uvicorn main:app
 ```
 
-Every request now produces a span in your OTel backend.
+Every request now produces a span in your OTel backend. The `/health` route calls `port.health()` through `PluginRegistry` — a `PluginHealth` snapshot, not the old `ping()`/`is_ready()` pair.

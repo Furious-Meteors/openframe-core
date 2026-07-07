@@ -1,55 +1,41 @@
-# health
+# health — removed in v3.0.0
 
-`openframe/core/health/protocol.py` · Health check port for all OpenFrame adapter packages.
+!!! warning "Module removed"
+    The `openframe.core.health` module and `HealthCheck` protocol (`ping()`/`is_ready()`) were **removed in v3.0.0**. There is no replacement shim or deprecated alias.
+
+Health is now part of the unified `Lifecycle` contract in `openframe.core.contracts`:
+
+```python
+from openframe.core.contracts import Lifecycle, PluginHealth, PluginStatus
+
+# Instead of ping() / is_ready(), implement:
+async def health(self) -> PluginHealth:
+    try:
+        await self._pool.fetchval("SELECT 1")
+        return PluginHealth(status=PluginStatus.READY)
+    except Exception as exc:
+        return PluginHealth(
+            status=PluginStatus.UNAVAILABLE,
+            message=str(exc),
+        )
+```
+
+`Lifecycle.health()` absorbs both `ping()` (cheap liveness) and `is_ready()` (full readiness) into one call returning a rich `PluginHealth` snapshot. Liveness vs. readiness granularity is expressed in `PluginStatus` and `PluginHealth.details`, not in separate methods.
 
 ---
 
-## Classes
+## Migration
 
-### `HealthCheck`
-
-```python
-@runtime_checkable
-class HealthCheck(Protocol):
-    async def ping(self) -> bool: ...
-    async def is_ready(self) -> bool: ...
-```
-
-Health check port. Every adapter implements `ping()` and `is_ready()`.
-
-#### `ping()`
-
-Low-cost liveness check. Verify the adapter can reach its backend. Should complete within milliseconds — a TCP connect attempt or `SELECT 1` is appropriate. Called frequently by load balancers and watchdog processes.
-
-**Returns:** `bool` — `True` if the backend is reachable, `False` otherwise. Must not raise — return `False` on any failure.
-
-#### `is_ready()`
-
-Full readiness check. Verify the adapter is fully ready to serve requests — schema correct, migrations applied, connection pool has healthy connections. More expensive than `ping()`. Called once at application startup.
-
-**Returns:** `bool` — `True` if the adapter is ready to serve, `False` otherwise. Must not raise — return `False` on any failure.
+| v2 | v3 |
+|---|---|
+| `from openframe.core.health import HealthCheck` | `from openframe.core.contracts import Lifecycle, PluginHealth, PluginStatus` |
+| `async def ping(self) -> bool` | `async def health(self) -> PluginHealth` |
+| `async def is_ready(self) -> bool` | `async def health(self) -> PluginHealth` |
+| `isinstance(obj, HealthCheck)` | `isinstance(obj, Lifecycle)` |
 
 ---
 
-## Example Implementation
+## See Also
 
-```python
-class PostgresRepository:
-    async def ping(self) -> bool:
-        try:
-            await self._pool.fetchval("SELECT 1")
-            return True
-        except Exception:
-            return False
-
-    async def is_ready(self) -> bool:
-        try:
-            count = await self._pool.fetchval(
-                "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public'"
-            )
-            return count > 0
-        except Exception:
-            return False
-
-assert isinstance(PostgresRepository(), HealthCheck)  # True
-```
+- [contracts module](contracts.md) — `Lifecycle`, `PluginHealth`, `PluginStatus`, `BasePort`
+- [ADR-006](../../technical/architecture/adrs/adr-006-unified-port-lifecycle.md) — full rationale for the removal

@@ -8,7 +8,7 @@ The smallest meaningful change to `openframe-core`: adding a new exception subcl
 
 A new exception for when a message cannot be serialised before publishing to a queue.
 
-**1. Add the class to `openframe/core/exceptions/errors.py`:**
+**1. Add the class to `openframe/core/exceptions/base.py` (under `AdapterError` subclasses):**
 
 ```python
 class AdapterSerializationError(AdapterError):
@@ -32,7 +32,7 @@ class AdapterSerializationError(AdapterError):
 **2. Export it from `openframe/core/exceptions/__init__.py`:**
 
 ```python
-from openframe.core.exceptions.errors import (
+from openframe.core.exceptions.base import (
     ...
     AdapterSerializationError,
 )
@@ -46,11 +46,16 @@ __all__ = [
 **3. Add a test in `tests/test_exceptions.py`:**
 
 ```python
+from openframe.core.exceptions import AdapterError, AdapterSerializationError, OpenFrameError
+
 def test_serialization_error_instantiates() -> None:
     exc = AdapterSerializationError("payload not serialisable", "kafka", "publish")
     assert isinstance(exc, AdapterError)
+    assert isinstance(exc, OpenFrameError)   # v3: all errors derive from OpenFrameError
     assert "kafka" in str(exc)
     assert "publish" in str(exc)
+    assert exc.code == "adapter.error"       # inherits AdapterError code
+    assert not exc.retryable
 ```
 
 **4. Run the tests:**
@@ -62,15 +67,17 @@ pytest tests/test_exceptions.py -v
 **5. Bump the version in `pyproject.toml`:**
 
 ```toml
-version = "1.0.1"
+version = "3.0.1"
 ```
 
-This is a backwards-compatible addition — a minor bump is correct. No existing code breaks.
+This is a backwards-compatible addition — a patch bump is correct. No existing code breaks.
 
 ---
 
 ## What Not to Change
 
-- Never modify `AdapterError.__init__` — all five subclasses inherit from it and changing the signature is a breaking change.
+- Never modify `AdapterError.__init__` or `OpenFrameError.__init__` — all subclasses inherit from them and changing the signature is a breaking change.
 - Never add infrastructure imports to any `openframe/core/` module.
 - Never change `BaseRepository`, `BaseProducer`, or `BaseConsumer` method signatures — these are the stable contract that every adapter in the ecosystem implements.
+- Never add a method to `BasePort` (`Identity` or `Lifecycle`) without bumping the major version — it is a breaking change for all adapter implementers.
+- Never extend `ErrorCode` in downstream packages — declare your own `"domain.kind"` strings instead.

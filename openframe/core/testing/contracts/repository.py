@@ -1,22 +1,26 @@
 """
 openframe/core/testing/contracts/repository.py
 ================================================
-RepositoryContractTests — reusable pytest base class.
+RepositoryContractTests — reusable pytest base class (ADR-006).
 
 Every ``openframe-adapters-db-*`` package must inherit this class and
-pass every test.  Tests operate at the behavioural level — no real backend
+pass every test. Tests operate at the behavioural level — no real backend
 is required for :class:`~openframe.core.testing.fakes.InMemoryRepository`;
 a real backend is required for Postgres, Mongo, etc.
 
+Builds on :class:`~openframe.core.testing.contracts.port.PortContractTests`
+for the full ``BasePort`` (identity + lifecycle) contract, adding
+domain-specific CRUD assertions on top.
+
 No top-level pytest import — this module can be imported without pytest
-installed.  The test methods use pytest's fixture injection mechanism
+installed. The test methods use pytest's fixture injection mechanism
 through parameter names; pytest is discovered at collection time.
 
 .. stability: beta
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/contracts/repository → testing/fakes + ports + health
+    testing/contracts/repository → testing/contracts/port + ports + testing/fakes
 
 Subclass usage::
 
@@ -24,6 +28,10 @@ Subclass usage::
         @pytest.fixture
         def repository(self) -> InMemoryRepository:
             return InMemoryRepository()
+
+        @pytest.fixture
+        def port(self, repository) -> InMemoryRepository:
+            return repository
 
         @pytest.fixture
         def make_entity(self):
@@ -37,6 +45,10 @@ Subclass usage::
             return ItemPostgresRepository(postgres_settings)
 
         @pytest.fixture
+        def port(self, repository):
+            return repository
+
+        @pytest.fixture
         def make_entity(self):
             def _make(id: str, name: str = "test") -> Item:
                 return Item(id=id, name=name)
@@ -44,24 +56,32 @@ Subclass usage::
 """
 from __future__ import annotations
 
+from openframe.core.testing.contracts.port import PortContractTests
+
 __all__ = ["RepositoryContractTests"]
 
 
-class RepositoryContractTests:
+class RepositoryContractTests(PortContractTests):
     """
     Reusable pytest base class for repository contract tests.
 
-    Subclasses must provide two pytest fixtures:
+    Subclasses must provide three pytest fixtures:
 
     ``repository``
         A :class:`~openframe.core.ports.BaseRepository` instance to test.
+
+    ``port``
+        Typically an alias of ``repository`` (``return repository``) — lets
+        the inherited :class:`~openframe.core.testing.contracts.port.PortContractTests`
+        identity/lifecycle checks run against the same instance.
 
     ``make_entity``
         A callable ``(id: str, name: str = "test") -> T`` that creates
         test entities compatible with the repository.
 
-    Every ``test_*`` method in this class is discovered and run by pytest
-    on the concrete subclass.
+    Every ``test_*`` method in this class (and its
+    :class:`~openframe.core.testing.contracts.port.PortContractTests` base)
+    is discovered and run by pytest on the concrete subclass.
 
     .. stability: beta
     """
@@ -171,39 +191,7 @@ class RepositoryContractTests:
         assert result is False
 
     # ------------------------------------------------------------------
-    # HealthCheck — ping
-    # ------------------------------------------------------------------
-
-    async def test_ping_returns_bool(self, repository, make_entity) -> None:
-        """ping() returns a bool."""
-        result = await repository.ping()
-        assert isinstance(result, bool)
-
-    async def test_ping_never_raises(self, repository, make_entity) -> None:
-        """ping() must not raise under any circumstances."""
-        try:
-            await repository.ping()
-        except Exception as exc:  # noqa: BLE001
-            raise AssertionError(f"ping() raised {exc!r}") from exc
-
-    # ------------------------------------------------------------------
-    # HealthCheck — is_ready
-    # ------------------------------------------------------------------
-
-    async def test_is_ready_returns_bool(self, repository, make_entity) -> None:
-        """is_ready() returns a bool."""
-        result = await repository.is_ready()
-        assert isinstance(result, bool)
-
-    async def test_is_ready_never_raises(self, repository, make_entity) -> None:
-        """is_ready() must not raise under any circumstances."""
-        try:
-            await repository.is_ready()
-        except Exception as exc:  # noqa: BLE001
-            raise AssertionError(f"is_ready() raised {exc!r}") from exc
-
-    # ------------------------------------------------------------------
-    # Protocol isinstance checks
+    # Protocol isinstance check
     # ------------------------------------------------------------------
 
     async def test_satisfies_base_repository_protocol(self, repository, make_entity) -> None:
@@ -212,14 +200,6 @@ class RepositoryContractTests:
 
         assert isinstance(repository, BaseRepository), (
             f"{type(repository).__name__} does not satisfy BaseRepository. "
-            "Ensure it implements get, list, create, update, delete."
-        )
-
-    async def test_satisfies_health_check_protocol(self, repository, make_entity) -> None:
-        """Repository satisfies HealthCheck via structural subtyping."""
-        from openframe.core.health import HealthCheck
-
-        assert isinstance(repository, HealthCheck), (
-            f"{type(repository).__name__} does not satisfy HealthCheck. "
-            "Ensure it implements async ping() and async is_ready()."
+            "Ensure it implements get, list, create, update, delete, plus "
+            "the BasePort identity/lifecycle members."
         )

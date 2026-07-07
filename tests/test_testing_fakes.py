@@ -6,7 +6,8 @@ Tests for openframe.core.testing fakes and their contract conformance.
 Structure
 ---------
 - ``TestInMemoryRepositoryConformance`` — passes the full
-  :class:`~openframe.core.testing.RepositoryContractTests` suite.
+  :class:`~openframe.core.testing.RepositoryContractTests` suite
+  (including the inherited ``BasePort`` identity/lifecycle checks).
 - ``TestFakeProducerConformance``        — passes the full
   :class:`~openframe.core.testing.ProducerContractTests` suite.
 - ``TestFakeConsumerConformance``        — passes the full
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 import pytest
 
+from openframe.core.contracts import Capability, PluginStatus
 from openframe.core.exceptions import AdapterQueryError
 from openframe.core.testing import (
     ConsumerContractTests,
@@ -43,6 +45,11 @@ class TestInMemoryRepositoryConformance(RepositoryContractTests):
         return InMemoryRepository()
 
     @pytest.fixture
+    def port(self, repository: InMemoryRepository) -> InMemoryRepository:
+        """Alias for the inherited PortContractTests identity/lifecycle checks."""
+        return repository
+
+    @pytest.fixture
     def make_entity(self):
         """Produce dict entities with 'id' and 'name' keys."""
 
@@ -65,6 +72,11 @@ class TestFakeProducerConformance(ProducerContractTests):
         """Provide a fresh FakeProducer for each test."""
         return FakeProducer()
 
+    @pytest.fixture
+    def port(self, producer: FakeProducer) -> FakeProducer:
+        """Alias for the inherited PortContractTests identity/lifecycle checks."""
+        return producer
+
 
 # ---------------------------------------------------------------------------
 # FakeConsumer — contract conformance
@@ -80,6 +92,11 @@ class TestFakeConsumerConformance(ConsumerContractTests):
         c: FakeConsumer[str] = FakeConsumer()
         c.feed(["msg1", "msg2"])
         return c
+
+    @pytest.fixture
+    def port(self, consumer: FakeConsumer) -> FakeConsumer:
+        """Alias for the inherited PortContractTests identity/lifecycle checks."""
+        return consumer
 
 
 # ---------------------------------------------------------------------------
@@ -107,28 +124,42 @@ async def test_in_memory_repository_store_property_accessible() -> None:
     assert repo.store["42"] == entity
 
 
-async def test_in_memory_repository_ping_unhealthy_when_configured() -> None:
-    """ping() returns False when ping_healthy=False."""
-    repo: InMemoryRepository[dict] = InMemoryRepository(ping_healthy=False)
-    result = await repo.ping()
-    assert result is False
+async def test_in_memory_repository_health_reports_failed_when_configured() -> None:
+    """health() reports PluginStatus.FAILED when healthy=False."""
+    repo: InMemoryRepository[dict] = InMemoryRepository(healthy=False)
+    health = await repo.health()
+    assert health.status is PluginStatus.FAILED
 
 
-async def test_in_memory_repository_ready_unhealthy_when_configured() -> None:
-    """is_ready() returns False when ready_healthy=False."""
-    repo: InMemoryRepository[dict] = InMemoryRepository(ready_healthy=False)
-    result = await repo.is_ready()
-    assert result is False
+async def test_in_memory_repository_health_reports_registered_before_initialize() -> None:
+    """health() reports PluginStatus.REGISTERED before initialize() is called."""
+    repo: InMemoryRepository[dict] = InMemoryRepository()
+    health = await repo.health()
+    assert health.status is PluginStatus.REGISTERED
 
 
-async def test_in_memory_repository_satisfies_both_protocols() -> None:
-    """InMemoryRepository satisfies both BaseRepository and HealthCheck."""
-    from openframe.core.health import HealthCheck
+async def test_in_memory_repository_health_reports_ready_after_initialize() -> None:
+    """health() reports PluginStatus.READY after initialize() is called."""
+    from openframe.core.contracts import PluginContext
+
+    repo: InMemoryRepository[dict] = InMemoryRepository()
+    await repo.initialize(PluginContext(config={}, plugin_name=repo.name))
+    health = await repo.health()
+    assert health.status is PluginStatus.READY
+
+
+async def test_in_memory_repository_satisfies_base_repository_protocol() -> None:
+    """InMemoryRepository satisfies BaseRepository (BasePort + CRUD methods)."""
     from openframe.core.ports import BaseRepository
 
     repo: InMemoryRepository[dict] = InMemoryRepository()
     assert isinstance(repo, BaseRepository)
-    assert isinstance(repo, HealthCheck)
+
+
+def test_in_memory_repository_default_capability_is_persistence() -> None:
+    """InMemoryRepository defaults to Capability.PERSISTENCE."""
+    repo: InMemoryRepository[dict] = InMemoryRepository()
+    assert repo.capability == Capability.PERSISTENCE
 
 
 # ---------------------------------------------------------------------------
@@ -175,6 +206,12 @@ async def test_fake_producer_clear_resets_state() -> None:
     producer.clear()
     assert producer.published == []
     assert producer.batches == []
+
+
+def test_fake_producer_default_capability_is_queue() -> None:
+    """FakeProducer defaults to Capability.QUEUE."""
+    producer: FakeProducer[str] = FakeProducer()
+    assert producer.capability == Capability.QUEUE
 
 
 # ---------------------------------------------------------------------------
@@ -247,3 +284,9 @@ async def test_fake_consumer_multiple_feeds_accumulate() -> None:
 
     await consumer.subscribe(handler)
     assert received == ["first", "second"]
+
+
+def test_fake_consumer_default_capability_is_queue() -> None:
+    """FakeConsumer defaults to Capability.QUEUE."""
+    consumer: FakeConsumer[str] = FakeConsumer()
+    assert consumer.capability == Capability.QUEUE

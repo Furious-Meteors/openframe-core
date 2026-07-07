@@ -9,7 +9,7 @@ A queue consumer (`BaseConsumer` implementation) has stopped processing messages
 - Queue depth increasing with no drain
 - No `ack()` calls visible in OTel spans
 - Consumer container is running but `subscribe()` loop has stalled
-- `ping()` returns `True` (broker is reachable) but messages are not processed
+- `port.health()` returns `PluginStatus.READY` (broker is reachable) but messages are not processed
 
 ---
 
@@ -26,10 +26,14 @@ Look for the last message that was started but never acknowledged. A handler tha
 **2. Check broker connectivity.**
 
 ```python
-asyncio.run(consumer.ping())   # True = broker reachable, False = connection lost
+from openframe.core.contracts import PluginStatus
+import asyncio
+
+health = asyncio.run(consumer.health())
+print(health.status)   # PluginStatus.READY = broker reachable; UNAVAILABLE = connection lost
 ```
 
-If `ping()` returns `False`, this is a [Redis Connection Lost](redis-connection-lost.md) or broker outage, not a stuck consumer.
+If `health.status == PluginStatus.UNAVAILABLE`, this is a [Redis Connection Lost](redis-connection-lost.md) or broker outage, not a stuck consumer.
 
 ---
 

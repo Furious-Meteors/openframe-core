@@ -1,17 +1,24 @@
 """
 openframe.core.plugins
 =======================
-Lightweight plugin kernel for the OpenFrame platform.
+Lightweight plugin kernel for the OpenFrame platform (ADR-006).
 
-All symbols are **experimental** in v2.0 and will stabilise in v2.1 or v3.0
-based on real usage.
+A "plugin" is just a registered
+:class:`~openframe.core.contracts.port.BasePort` — there is no separate
+plugin protocol. This package re-exports the ``contracts`` types
+:class:`~openframe.core.plugins.registry.PluginRegistry` operates on for
+convenience, plus the registry itself.
+
+All symbols are **experimental** in v3.0 and will stabilise based on real
+usage.
 
 .. stability: experimental
 """
 from __future__ import annotations
 
-from openframe.core.plugins.contracts import (
-    OpenFramePlugin,
+from openframe.core.contracts import (
+    BasePort,
+    Capability,
     PluginContext,
     PluginHealth,
     PluginStatus,
@@ -19,7 +26,8 @@ from openframe.core.plugins.contracts import (
 from openframe.core.plugins.registry import PluginRegistry
 
 __all__ = [
-    "OpenFramePlugin",
+    "BasePort",
+    "Capability",
     "PluginContext",
     "PluginHealth",
     "PluginStatus",

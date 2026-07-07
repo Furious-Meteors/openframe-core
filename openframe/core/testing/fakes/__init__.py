@@ -1,10 +1,11 @@
 """
 openframe.core.testing.fakes
 ==============================
-In-memory test doubles for OpenFrame ports.
+In-memory test doubles for OpenFrame ports (ADR-006).
 
 All fakes have zero external dependencies and satisfy their respective
-port protocols via structural subtyping.
+``BasePort``-based port protocols via structural subtyping — including the
+identity/lifecycle members every port now carries.
 
 .. stability: beta
 """

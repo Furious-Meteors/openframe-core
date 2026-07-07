@@ -70,8 +70,10 @@ Middleware note:
     It does NOT call ``setup_telemetry()``. Call ``setup_telemetry()`` once at
     application startup (e.g. in a ``lifespan`` handler).
 
-Dependency order: this module imports opentelemetry-* (external) only.
-No openframe.core imports.
+Dependency order: this module imports opentelemetry-* (external) and, for
+``record_error``, ``openframe.core.exceptions`` — which is the lowest layer
+in the DAG, so importing it here does not invert the dependency order. The
+error object never imports telemetry; telemetry reads the error's plain data.
 """
 from __future__ import annotations
 
@@ -88,16 +90,26 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import Status, StatusCode
+
+from openframe.core.exceptions import OpenFrameError
 
 __all__ = [
     "setup_telemetry",
     "get_tracer",
     "get_meter",
     "record_lifecycle_event",
+    "record_error",
 ]
 
 _INITIALISED: bool = False
 _logger = logging.getLogger(__name__)
+
+# Attribute stamped on an error the first time record_error counts it, so a
+# single error bubbling through multiple seams (TracingProxy, middleware) is
+# counted in the openframe.error.count metric exactly once. Spans are still
+# annotated at every seam — nested spans each showing the error is desirable.
+_ERROR_RECORDED_FLAG = "_openframe_error_recorded"
 
 
 def setup_telemetry() -> None:
@@ -280,3 +292,65 @@ def record_lifecycle_event(
         unit="1",
     )
     counter.add(1, attributes or {})
+
+
+def record_error(err: Exception, *, span: trace.Span | None = None) -> None:
+    """
+    Record an error onto the current span and the error metric counter.
+
+    This is the single seam through which errors flow into telemetry. It is
+    called at each architectural boundary (``TracingProxy``,
+    ``TelemetryMiddleware``, ``PluginRegistry`` lifecycle) so that any error —
+    whether it reaches an HTTP request, an adapter call, or startup — is
+    observable.
+
+    On the span it:
+    - records the exception (stack trace) and sets ERROR status,
+    - for an :class:`~openframe.core.exceptions.OpenFrameError`, sets the
+      ``error.code`` / ``error.severity`` / ``error.retryable`` attributes,
+    - stamps the active trace id back onto ``err.correlation_id`` (enrichment
+      on the way up — the error never fetches it itself).
+
+    On metrics it increments ``openframe.error.count`` (labelled only by the
+    low-cardinality ``error.code``) exactly once per error object, even if the
+    error passes through several seams.
+
+    This function never raises — a telemetry failure must not mask the
+    original error being propagated.
+
+    Args:
+        err:  The exception being propagated.
+        span: The span to annotate. Defaults to the current active span.
+    """
+    target_span = span if span is not None else trace.get_current_span()
+
+    try:
+        target_span.record_exception(err)
+        target_span.set_status(Status(StatusCode.ERROR, str(err)))
+
+        if isinstance(err, OpenFrameError):
+            target_span.set_attribute("error.code", str(err.code))
+            target_span.set_attribute("error.severity", str(err.severity))
+            target_span.set_attribute("error.retryable", bool(err.retryable))
+
+            ctx = target_span.get_span_context()
+            if err.correlation_id is None and ctx is not None and ctx.is_valid:
+                err.correlation_id = format(ctx.trace_id, "032x")
+    except Exception:  # noqa: BLE001 — telemetry must never mask the real error
+        _logger.debug("record_error: span annotation failed", exc_info=True)
+
+    if getattr(err, _ERROR_RECORDED_FLAG, False):
+        return
+
+    try:
+        code = getattr(err, "code", "unknown")
+        meter = get_meter()
+        counter = meter.create_counter(
+            name="openframe.error.count",
+            description="Count of OpenFrame errors recorded to telemetry.",
+            unit="1",
+        )
+        counter.add(1, {"error.code": str(code)})
+        setattr(err, _ERROR_RECORDED_FLAG, True)
+    except Exception:  # noqa: BLE001 — telemetry must never mask the real error
+        _logger.debug("record_error: metric emission failed", exc_info=True)

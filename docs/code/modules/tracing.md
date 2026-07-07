@@ -50,5 +50,5 @@ traced = TracingProxy(repo, prefix="repository.item")
 # traced.sync_method()   → passes through, no span
 ```
 
-!!! note "TracingProxy and HealthCheck"
-    `TracingProxy` does not implement `HealthCheck` — `ping()` and `is_ready()` on the proxy are async and will be traced, but the proxy itself does not declare the `HealthCheck` Protocol. Call `is_ready()` on the underlying adapter directly during startup checks.
+!!! note "TracingProxy and health()"
+    `TracingProxy` transparently proxies all async methods — including `health()`. A `health()` call on the proxy will produce a child span named `{prefix}.health`. This is usually the correct behaviour (health calls are traceable). If you need the raw `PluginHealth` without a span, call `health()` directly on the underlying port (accessible via `proxy._wrapped`).

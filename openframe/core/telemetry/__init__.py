@@ -31,6 +31,7 @@ from __future__ import annotations
 from openframe.core.telemetry.setup import (
     get_meter,
     get_tracer,
+    record_error,
     record_lifecycle_event,
     setup_telemetry,
 )
@@ -40,4 +41,5 @@ __all__ = [
     "get_tracer",
     "get_meter",
     "record_lifecycle_event",
+    "record_error",
 ]

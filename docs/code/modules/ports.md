@@ -1,17 +1,34 @@
 # ports
 
-`openframe/core/ports/` · Generic persistence and messaging port definitions.
+`openframe/core/ports/` · Generic persistence and messaging port definitions, each built on `BasePort`.
 
 ---
 
 ## Overview
 
-Three `runtime_checkable` Protocols. Adapters satisfy them structurally — no inheritance required. Any class with matching async method signatures passes `isinstance` checks.
+Three `runtime_checkable` Protocols, each `BasePort` (`Identity` + `Lifecycle`) plus its own domain methods. Adapters satisfy them structurally — no inheritance required. Any class with matching method signatures (identity, lifecycle, and domain methods) passes `isinstance` checks.
+
+Every port is lifecycle-aware by definition — there is no lifecycle-free variant. `name`, `version`, `capability`, `initialize`, `shutdown`, and `health` are required on every adapter.
 
 !!! warning "Generic isinstance limitation"
     `isinstance(repo, BaseRepository)` works at runtime.
     `isinstance(repo, BaseRepository[str])` raises `TypeError`.
     Always use the unparameterised form in `isinstance` checks.
+
+---
+
+## BasePort members (inherited by all ports)
+
+All three protocols extend `BasePort`, which composes `Identity` and `Lifecycle`. Every port therefore requires these members in addition to its own domain methods:
+
+| Member | Type | Description |
+|---|---|---|
+| `name` | `str` | Adapter identifier, e.g. `"postgres-main"` |
+| `version` | `str` | Semantic version, e.g. `"1.0.0"` |
+| `capability` | `Capability` | `Capability.PERSISTENCE`, `Capability.QUEUE`, etc. |
+| `initialize(context)` | `async (PluginContext) -> None` | Connect, validate config, acquire resources |
+| `shutdown()` | `async () -> None` | Flush, close connections, release resources |
+| `health()` | `async () -> PluginHealth` | Return liveness/readiness snapshot; never raise |
 
 ---
 
@@ -25,7 +42,8 @@ Generic persistence port. `T` is the domain entity type.
 
 ```python
 @runtime_checkable
-class BaseRepository(Protocol[T]):
+class BaseRepository(BasePort, Protocol[T]):
+    # identity + lifecycle from BasePort, plus:
     async def get(self, entity_id: str) -> T | None: ...
     async def list(self, limit: int, offset: int) -> tuple[list[T], int]: ...
     async def create(self, entity: T) -> T: ...
@@ -94,7 +112,8 @@ Generic message producer port. `T` is the message payload type.
 
 ```python
 @runtime_checkable
-class BaseProducer(Protocol[T]):
+class BaseProducer(BasePort, Protocol[T]):
+    # identity + lifecycle from BasePort, plus:
     async def publish(self, message: T) -> None: ...
     async def publish_batch(self, messages: list[T]) -> None: ...
     async def close(self) -> None: ...
@@ -120,6 +139,9 @@ Publish multiple messages. Uses the backend's native batch API when available. A
 
 Flush pending messages and release producer resources. Idempotent — safe to call multiple times.
 
+!!! note
+    `close()` is a domain method for flushing pending messages. Lifecycle teardown (releasing connections, etc.) happens in `shutdown()` — the `Lifecycle` method called by `PluginRegistry.shutdown_all()`.
+
 ---
 
 ### `BaseConsumer[T]`
@@ -130,7 +152,8 @@ Generic message consumer port. Uses a push-based handler model. `T` is the messa
 
 ```python
 @runtime_checkable
-class BaseConsumer(Protocol[T]):
+class BaseConsumer(BasePort, Protocol[T]):
+    # identity + lifecycle from BasePort, plus:
     async def subscribe(
         self,
         handler: Callable[[T], Awaitable[None]],
@@ -161,3 +184,41 @@ Negatively acknowledge. Signals the broker the message was not processed — may
 #### `close()`
 
 Stop consuming and release resources. Idempotent.
+
+---
+
+## Example: full BasePort implementation
+
+```python
+from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
+from openframe.core.ports import BaseRepository
+
+class PostgresItemRepository:
+    # Identity
+    name = "postgres-items"
+    version = "1.0.0"
+    capability = Capability.PERSISTENCE
+
+    # Lifecycle
+    async def initialize(self, context: PluginContext) -> None:
+        self._pool = await asyncpg.create_pool(context.config["dsn"])
+
+    async def shutdown(self) -> None:
+        await self._pool.close()
+
+    async def health(self) -> PluginHealth:
+        try:
+            await self._pool.fetchval("SELECT 1")
+            return PluginHealth(status=PluginStatus.READY)
+        except Exception as exc:
+            return PluginHealth(status=PluginStatus.UNAVAILABLE, message=str(exc))
+
+    # Domain methods
+    async def get(self, entity_id: str) -> Item | None: ...
+    async def list(self, limit: int, offset: int) -> tuple[list[Item], int]: ...
+    async def create(self, entity: Item) -> Item: ...
+    async def update(self, entity: Item) -> Item | None: ...
+    async def delete(self, entity_id: str) -> bool: ...
+
+assert isinstance(PostgresItemRepository(), BaseRepository)   # True
+```

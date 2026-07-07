@@ -64,7 +64,7 @@ from opentelemetry.trace import StatusCode
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from openframe.core.middleware.types import ASGIApp, ASGIMessage, ASGIScope, Receive, Send
-from openframe.core.telemetry.setup import get_meter, get_tracer
+from openframe.core.telemetry.setup import get_meter, get_tracer, record_error
 
 __all__ = ["TelemetryMiddleware"]
 
@@ -295,7 +295,11 @@ class TelemetryMiddleware:
                 instr["request_count"].add(1, err_labels)
                 instr["request_duration"].record(duration_s, err_labels)
                 instr["error_count"].add(1, err_labels)
-                span.set_status(StatusCode.ERROR, str(exc))
+                # Boundary seam: record structured error data (error.code /
+                # severity / retryable span attributes + openframe.error.count)
+                # and set ERROR status. record_error also handles the metric
+                # dedupe if the error was already counted deeper in the stack.
+                record_error(exc, span=span)
                 _logger.error(
                     "HTTP %s %s — unhandled exception after %.3fs: %s",
                     method,

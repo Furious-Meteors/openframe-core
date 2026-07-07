@@ -1,10 +1,14 @@
 """
 openframe/core/testing/contracts/consumer.py
 ==============================================
-ConsumerContractTests — reusable pytest base class.
+ConsumerContractTests — reusable pytest base class (ADR-006).
 
 Every ``openframe-adapters-queue-*`` package must inherit this class and
 pass every test.
+
+Builds on :class:`~openframe.core.testing.contracts.port.PortContractTests`
+for the full ``BasePort`` (identity + lifecycle) contract, adding
+domain-specific subscribe/ack/nack assertions on top.
 
 No top-level pytest import — this module can be imported without pytest
 installed.
@@ -18,7 +22,7 @@ call ``consumer.feed([...])`` before returning the consumer instance.
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/contracts/consumer → testing/fakes + ports
+    testing/contracts/consumer → testing/contracts/port + ports + testing/fakes
 
 Subclass usage::
 
@@ -29,27 +33,42 @@ Subclass usage::
             c.feed(["msg1", "msg2"])
             return c
 
+        @pytest.fixture
+        def port(self, consumer) -> FakeConsumer:
+            return consumer
+
     class TestKafkaConsumer(ConsumerContractTests):
         @pytest.fixture
         async def consumer(self, kafka_settings, pre_published_messages):
             # pre_published_messages fixture publishes test messages first
             return KafkaConsumer(kafka_settings)
+
+        @pytest.fixture
+        def port(self, consumer):
+            return consumer
 """
 from __future__ import annotations
+
+from openframe.core.testing.contracts.port import PortContractTests
 
 __all__ = ["ConsumerContractTests"]
 
 
-class ConsumerContractTests:
+class ConsumerContractTests(PortContractTests):
     """
     Reusable pytest base class for consumer contract tests.
 
-    Subclasses must provide one pytest fixture:
+    Subclasses must provide two pytest fixtures:
 
     ``consumer``
         A :class:`~openframe.core.ports.BaseConsumer` instance that has
         at least one message ready for delivery when ``subscribe()`` is
         called.
+
+    ``port``
+        Typically an alias of ``consumer`` (``return consumer``) — lets
+        the inherited :class:`~openframe.core.testing.contracts.port.PortContractTests`
+        identity/lifecycle checks run against the same instance.
 
     .. stability: beta
     """
@@ -109,5 +128,6 @@ class ConsumerContractTests:
 
         assert isinstance(consumer, BaseConsumer), (
             f"{type(consumer).__name__} does not satisfy BaseConsumer. "
-            "Ensure it implements async subscribe, ack, nack, and close."
+            "Ensure it implements async subscribe, ack, nack, and close, "
+            "plus the BasePort identity/lifecycle members."
         )

@@ -9,7 +9,7 @@ All connections in the asyncpg pool are in use. New requests wait for a connecti
 - HTTP requests to database-backed routes time out (> `connection_timeout` seconds)
 - `AdapterTimeoutError` in logs with `operation="get"` or `operation="create"`
 - OTel spans show long duration on `repository.*.get` child spans
-- `is_ready()` may return `False` if pool health check cannot acquire a connection
+- `port.health()` may return `PluginStatus.UNAVAILABLE` if pool health check cannot acquire a connection
 
 ---
 

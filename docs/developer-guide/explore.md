@@ -7,39 +7,54 @@ After installing `openframe-core`, explore what it provides.
 ## Browse the Namespace
 
 ```python
-import openframe.core
+import openframe.core.contracts
 import openframe.core.ports
 import openframe.core.exceptions
+import openframe.core.inbound
 import openframe.core.middleware
 
 # All public exports
+print(dir(openframe.core.contracts))
+# ['BasePort', 'Capability', 'Identity', 'Lifecycle', 'PluginContext',
+#  'PluginHealth', 'PluginStatus', 'PrincipalContext', 'TenantContext', ...]
+
 print(dir(openframe.core.ports))
 # ['BaseConsumer', 'BaseProducer', 'BaseRepository', '__all__', ...]
 ```
 
 ---
 
-## Verify Protocol Conformance
+## Verify BasePort Conformance
 
 ```python
-from openframe.core.ports import BaseRepository, BaseProducer, BaseConsumer
-from openframe.core.health import HealthCheck
+from openframe.core.contracts import BasePort, Capability, PluginContext, PluginHealth, PluginStatus
+from openframe.core.ports import BaseRepository
 
 class MyRepo:
+    # Identity
+    name = "my-repo"
+    version = "1.0.0"
+    capability = Capability.PERSISTENCE
+
+    # Lifecycle
+    async def initialize(self, context: PluginContext) -> None: pass
+    async def shutdown(self) -> None: pass
+    async def health(self) -> PluginHealth:
+        return PluginHealth(status=PluginStatus.READY)
+
+    # Domain methods
     async def get(self, entity_id: str): return None
     async def list(self, limit: int, offset: int): return [], 0
     async def create(self, entity): return entity
     async def update(self, entity): return entity
     async def delete(self, entity_id: str): return True
-    async def ping(self) -> bool: return True
-    async def is_ready(self) -> bool: return True
 
+print(isinstance(MyRepo(), BasePort))         # True
 print(isinstance(MyRepo(), BaseRepository))   # True
-print(isinstance(MyRepo(), HealthCheck))       # True
 
 class Incomplete:
     async def get(self, entity_id: str): return None
-    # missing list, create, update, delete
+    # missing list, create, update, delete, name, version, capability, lifecycle
 
 print(isinstance(Incomplete(), BaseRepository))  # False
 ```
@@ -50,21 +65,51 @@ print(isinstance(Incomplete(), BaseRepository))  # False
 
 ```python
 from openframe.core.exceptions import (
+    OpenFrameError,
     AdapterError,
     AdapterConnectionError,
     AdapterQueryError,
     AdapterNotFoundError,
     AdapterConfigurationError,
     AdapterTimeoutError,
+    PluginError,
+    AmbiguousCapabilityError,
 )
 
 exc = AdapterNotFoundError("item missing", "postgres", "get")
 print(str(exc))          # [postgres.get] item missing
 print(exc.adapter)       # postgres
 print(exc.operation)     # get
-print(exc.cause)         # None
+print(exc.code)          # adapter.not_found
+print(exc.retryable)     # False
+print(exc.severity)      # ERROR
 
-print(isinstance(exc, AdapterError))   # True — catch all with AdapterError
+print(isinstance(exc, AdapterError))     # True
+print(isinstance(exc, OpenFrameError))   # True — single catch point for the ecosystem
+```
+
+---
+
+## Explore PluginRegistry
+
+```python
+import asyncio
+from openframe.core.contracts import Capability
+from openframe.core.plugins import PluginRegistry
+
+registry = PluginRegistry()
+registry.register(MyRepo())
+asyncio.run(registry.initialize_all())
+
+repo = registry.get(Capability.PERSISTENCE)
+print(repo.name)       # my-repo
+print(repo.version)    # 1.0.0
+
+import asyncio
+health = asyncio.run(repo.health())
+print(health.status)   # ready
+
+asyncio.run(registry.shutdown_all())
 ```
 
 ---
@@ -89,6 +134,12 @@ trace.set_tracer_provider(provider)
 get_tracer.cache_clear()
 
 class FakeRepo:
+    name = "fake"
+    version = "1.0.0"
+    capability = Capability.PERSISTENCE
+    async def initialize(self, ctx): pass
+    async def shutdown(self): pass
+    async def health(self): return PluginHealth(status=PluginStatus.READY)
     async def get(self, entity_id: str): return {"id": entity_id}
 
 proxy = TracingProxy(FakeRepo(), prefix="repository.item")

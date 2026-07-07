@@ -8,10 +8,10 @@ A developer installs `openframe-core`, wires it into a template, and serves a re
 
 ```mermaid
 flowchart LR
-    TW["1. Template Wiring\ndeps.py assembles ports + adapters"]
-    AL["2. Adapter Lifecycle\nconnect → health check → execute → close"]
+    TW["1. Template Wiring\nPluginRegistry assembles ports"]
+    AL["2. Adapter Lifecycle\ninitialize → health() → execute → shutdown"]
     TF["3. Tracing Flow\nTracingProxy + TelemetryMiddleware produce spans"]
-    EP["4. Error Propagation\nAdapterError → service → HTTP response"]
+    EP["4. Error Propagation\nOpenFrameError → record_error → HTTP response"]
 
     TW --> AL --> TF --> EP
 
@@ -23,7 +23,7 @@ flowchart LR
 
 | Stage | Page | What it covers |
 |---|---|---|
-| Template Wiring | [Template Wiring](template-wiring.md) | How `deps.py` assembles settings, adapter, and `TracingProxy` |
-| Adapter Lifecycle | [Adapter Lifecycle](adapter-lifecycle.md) | connect, `is_ready()`, execute, reconnect, close |
+| Template Wiring | [Template Wiring](template-wiring.md) | How `PluginRegistry` and `deps.py` assemble ports with `TracingProxy` |
+| Adapter Lifecycle | [Adapter Lifecycle](adapter-lifecycle.md) | `initialize`, `health()`, execute, reconnect, `shutdown` |
 | Tracing Flow | [Tracing Flow](tracing-flow.md) | How spans flow from middleware through proxy to adapter |
-| Error Propagation | [Error Propagation](error-propagation.md) | How `AdapterError` becomes an HTTP response |
+| Error Propagation | [Error Propagation](error-propagation.md) | How `OpenFrameError` flows through `record_error` to an HTTP response |

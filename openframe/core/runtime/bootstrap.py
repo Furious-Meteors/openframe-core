@@ -1,21 +1,28 @@
 """
 openframe/core/runtime/bootstrap.py
 =====================================
-Optional composition root base class for OpenFrame applications.
+Optional composition root base class for OpenFrame applications (ADR-006).
 
-All symbols are **experimental** in v2.0.
+All symbols are **experimental** in v3.0.
 
 .. stability: experimental
    Experimental — API may change or be removed in any version.
 
 Dependency order:
-    plugins/registry → plugins/contracts → errors/plugin
-    runtime/bootstrap → plugins/registry
+    contracts         → (apex)
+    plugins/registry  → contracts + errors/plugin
+    runtime/bootstrap → plugins/registry + contracts
 """
 from __future__ import annotations
 
-from openframe.core.plugins.contracts import OpenFramePlugin, PluginHealth
+from typing import TYPE_CHECKING
+
+from openframe.core.contracts import BasePort, Capability, PluginHealth
 from openframe.core.plugins.registry import PluginRegistry
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from typing import Any
 
 __all__ = ["ApplicationBootstrap"]
 
@@ -26,8 +33,8 @@ class ApplicationBootstrap:
     """
     Optional composition root base class.
 
-    Manages plugin registration and lifecycle.  Applications that want
-    structured startup/shutdown may subclass this.  Applications that
+    Manages port registration and lifecycle. Applications that want
+    structured startup/shutdown may subclass this. Applications that
     prefer explicit ``deps.py`` wiring continue to work exactly as before —
     this class is **never** mandatory.
 
@@ -37,11 +44,11 @@ class ApplicationBootstrap:
 
         class MyServiceBootstrap(ApplicationBootstrap):
             def configure(self) -> None:
-                self.register(PostgresPlugin(PostgresSettings()))
-                self.register(RedisPlugin(RedisSettings()))
+                self.register(PostgresRepository(settings), config=pg_config)
+                self.register(RedisCache(settings), config=redis_config)
 
         async with MyServiceBootstrap() as bootstrap:
-            repo = bootstrap.get("persistence")
+            repo = bootstrap.get(Capability.PERSISTENCE)
             service = ItemService(repo)
             await serve(service)
 
@@ -62,79 +69,87 @@ class ApplicationBootstrap:
 
     def configure(self) -> None:
         """
-        Override to register plugins.
+        Override to register ports.
 
         Called automatically by :meth:`start` and :meth:`__aenter__`.
         The default implementation is a no-op — subclasses should override
-        and call :meth:`register` for each plugin they need.
+        and call :meth:`register` for each port they need.
         """
 
-    def register(self, plugin: OpenFramePlugin) -> None:
+    def register(self, plugin: BasePort, *, config: Mapping[str, Any] | None = None) -> None:
         """
-        Register a plugin with the internal registry.
+        Register a port with the internal registry.
 
         Delegates to :meth:`~openframe.core.plugins.registry.PluginRegistry.register`.
 
         Args:
-            plugin: Plugin instance satisfying
-                    :class:`~openframe.core.plugins.contracts.OpenFramePlugin`.
+            plugin: Port instance satisfying
+                    :class:`~openframe.core.contracts.port.BasePort`.
+            config: This port's validated configuration, threaded through
+                    to its :class:`~openframe.core.contracts.health.PluginContext`
+                    at initialization time.
 
         Raises:
-            TypeError:            Object does not satisfy the plugin protocol.
-            DuplicatePluginError: A plugin with this name is already registered.
+            TypeError:            Object does not satisfy the ``BasePort`` protocol.
+            DuplicatePluginError: A port with this name is already registered.
         """
-        self._registry.register(plugin)
+        self._registry.register(plugin, config=config)
 
-    def get(self, capability: str) -> OpenFramePlugin:
+    def get(self, capability: Capability) -> BasePort:
         """
-        Look up a plugin by capability.
+        Look up a port by capability.
 
         Only valid after :meth:`start` has been called (i.e. after
         :meth:`configure` and :meth:`~openframe.core.plugins.registry.PluginRegistry.initialize_all`
         have completed).
 
         Args:
-            capability: Logical role, e.g. ``"persistence"``, ``"cache"``.
+            capability: Logical role from the
+                        :class:`~openframe.core.contracts.capability.Capability`
+                        taxonomy.
 
         Returns:
-            The first registered plugin with the given capability.
+            The single registered port with the given capability.
 
         Raises:
-            KeyError: No plugin is registered for this capability.
+            KeyError:                 No port is registered for this capability.
+            AmbiguousCapabilityError: More than one port is registered for
+                                      this capability — use the registry's
+                                      ``get_all`` directly if that is intended.
         """
         return self._registry.get(capability)
 
     async def start(self) -> None:
         """
-        Configure and initialize all plugins.
+        Configure and initialize all ports.
 
         Calls :meth:`configure` then
         :meth:`~openframe.core.plugins.registry.PluginRegistry.initialize_all`.
-        If any plugin fails to initialize the exception propagates after
-        rolling back already-initialized plugins.
+        If any port fails to initialize the exception propagates after
+        rolling back already-initialized ports.
         """
         self.configure()
         await self._registry.initialize_all()
 
     async def stop(self) -> None:
         """
-        Shut down all plugins in reverse initialization order.
+        Shut down all ports in reverse initialization order.
 
         Delegates to
         :meth:`~openframe.core.plugins.registry.PluginRegistry.shutdown_all`.
-        Never raises — plugin errors are logged and shutdown continues.
+        Never raises — port errors are logged and shutdown continues.
         """
         await self._registry.shutdown_all()
 
     async def health(self) -> dict[str, PluginHealth]:
         """
-        Return live health snapshots for all registered plugins.
+        Return live health snapshots for all registered ports.
 
         Delegates to
         :meth:`~openframe.core.plugins.registry.PluginRegistry.health_all`.
 
         Returns:
-            Dict mapping plugin name → PluginHealth.
+            Dict mapping port name → PluginHealth.
         """
         return await self._registry.health_all()
 

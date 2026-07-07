@@ -1,23 +1,30 @@
 """
 openframe/core/ports/producer.py
 ===================================
-Generic message producer port for the OpenFrame ecosystem.
+Generic message producer port for the OpenFrame ecosystem (ADR-006).
 
-``BaseProducer[T]`` is the structural contract every message-queue publish
-adapter implements. Queue adapters (Kafka, SQS, PubSub, Redis Streams)
-satisfy this protocol by structural subtyping — no inheritance needed.
+``BaseProducer[T]`` extends
+:class:`~openframe.core.contracts.port.BasePort` directly — it is
+``Identity + Lifecycle`` plus its own domain methods. There is exactly one
+lifecycle-aware definition of this port.
+
+Queue adapters (Kafka, SQS, PubSub, Redis Streams) satisfy this protocol by
+structural subtyping — no inheritance needed.
 
 Runtime isinstance check::
 
     isinstance(producer, BaseProducer)       # ✓ works
     isinstance(producer, BaseProducer[str])  # ✗ raises TypeError
 
-Dependency order: this module imports only from Python stdlib typing.
-No openframe.core imports.
+Dependency order:
+    contracts/port  → contracts/identity + contracts/lifecycle
+    ports/producer  → contracts/port
 """
 from __future__ import annotations
 
 from typing import Protocol, TypeVar, runtime_checkable
+
+from openframe.core.contracts.port import BasePort
 
 __all__ = ["BaseProducer"]
 
@@ -25,13 +32,14 @@ T = TypeVar("T")
 
 
 @runtime_checkable
-class BaseProducer(Protocol[T]):
+class BaseProducer(BasePort, Protocol[T]):
     """
-    Generic message producer port.
+    Generic message producer port. ``BasePort`` (Identity + Lifecycle)
+    plus domain-specific publish methods.
 
     Queue adapters implement this protocol structurally — no inheritance
-    needed. Any class with matching async method signatures satisfies
-    ``BaseProducer``.
+    needed. Any class with matching async method signatures, plus the
+    ``BasePort`` members, satisfies ``BaseProducer``.
 
     Type parameter ``T`` is the message payload type.
 
@@ -40,12 +48,15 @@ class BaseProducer(Protocol[T]):
         isinstance(producer, BaseProducer)       # ✓ works
         isinstance(producer, BaseProducer[str])  # ✗ raises TypeError
 
-    Methods:
+    Domain methods:
         publish:       Publish a single message to the queue.
         publish_batch: Publish multiple messages in a single call (more
                        efficient than repeated ``publish()`` for bulk loads).
         close:         Flush pending messages and release producer resources.
                        Must be called before process exit.
+
+    Plus, inherited from ``BasePort``: ``name``, ``version``, ``capability``,
+    ``initialize``, ``shutdown``, ``health``.
     """
 
     async def publish(self, message: T) -> None:

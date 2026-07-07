@@ -6,17 +6,19 @@ The lifecycle of `openframe-core` components across application startup, request
 
 ## Startup Sequence
 
-The following diagram shows the order in which core components are initialised when a template application starts.
+The following diagram shows the order in which core components are initialised when a template application starts. `PluginRegistry` is the managed lifecycle coordinator — every port is initialised through it, and `health()` is the single health primitive (replacing the old `ping()`/`is_ready()` pair).
 
 ```mermaid
 stateDiagram-v2
     direction LR
     [*] --> TelemetryInit : lifespan startup
     TelemetryInit --> SettingsInit : setup_telemetry()
-    SettingsInit --> AdapterInit : PostgresSettings() / RedisSettings()
-    AdapterInit --> ProxyWrap : PostgresRepository(settings)
-    ProxyWrap --> Ready : TracingProxy(repo, prefix)
-    Ready --> [*] : lifespan shutdown → adapter.close()
+    SettingsInit --> RegistryBuild : PostgresSettings() / RedisSettings()
+    RegistryBuild --> PortInit : registry.register(port, config=…)
+    PortInit --> HealthCheck : port.initialize(PluginContext)
+    HealthCheck --> ProxyWrap : port.health() → PluginStatus.READY
+    ProxyWrap --> Ready : TracingProxy(port, prefix)
+    Ready --> [*] : lifespan shutdown → registry.shutdown_all()
 ```
 
 ---
@@ -54,6 +56,25 @@ flowchart TD
 
 !!! warning
     Tests must reset `_INITIALISED = False` and call `get_tracer.cache_clear()` between runs. Without this, the first test's `TracerProvider` leaks into all subsequent tests. See [conftest.py](../../code/modules/telemetry.md) for the reset fixture.
+
+---
+
+## PluginRegistry Lifecycle
+
+`PluginRegistry` is the single managed lifecycle coordinator. Ports are registered with optional config, initialised in order, and shut down in reverse (LIFO) order. If any port's `initialize()` raises, the registry rolls back already-initialised ports before propagating the error.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Registered : registry.register(port, config)
+    Registered --> Initialising : registry.initialize_all()
+    Initialising --> Ready : port.initialize(PluginContext) succeeds
+    Initialising --> RollingBack : port.initialize() raises
+    RollingBack --> [*] : shutdown already-initialised ports, re-raise
+    Ready --> Serving : registry.get(Capability.X)
+    Serving --> ShuttingDown : registry.shutdown_all()
+    ShuttingDown --> [*] : LIFO order, never raises
+```
 
 ---
 

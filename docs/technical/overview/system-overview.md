@@ -1,34 +1,51 @@
 # System Overview
 
-`openframe-core` is the foundation package of the OpenFrame Microservice Development Suite. It provides the structural contracts — ports, exceptions, config, tracing, telemetry, and middleware — that every adapter package in the ecosystem builds on.
+`openframe-core` is the foundation package of the OpenFrame Microservice
+Development Suite. It provides the unified port + lifecycle contract layer
+(ADR-006) — `contracts`, `ports`, `inbound`, `plugins`, plus the
+supporting `exceptions`, `config`, `tracing`, `telemetry`, and
+`middleware` infrastructure — that every adapter package in the ecosystem
+builds on.
 
 ---
 
-## Seven-Module Model
+## The Unified Contract Layer
 
-The following diagram shows the seven modules inside `openframe-core` and the dependency order between them. Higher modules may import lower ones; the reverse is never permitted.
+`openframe-core` v3.0 replaces the pre-v3 three-way split (hardcoded
+lifecycle-free ports + standalone `HealthCheck` + standalone
+`OpenFramePlugin`) with a single contract family: `Identity` +
+`Lifecycle` = `BasePort`. Every outbound port and every registrable plugin
+is a `BasePort`. There is no separate plugin protocol and no standalone
+health module — see
+[ADR-006](../architecture/adrs/adr-006-unified-port-lifecycle.md) for the
+full rationale and what it replaced.
 
 ```mermaid
 flowchart TD
+    CO["contracts/\nIdentity · Lifecycle · BasePort · Capability\nPluginStatus/Health/Context · Principal/TenantContext"]
+    PO["ports/\nBaseRepository · BaseProducer · BaseConsumer\n(each BasePort + domain methods)"]
+    IN["inbound/\nUseCase · CommandHandler · QueryHandler · RequestContext"]
+    PL["plugins/\nPluginRegistry (keyed on Capability)"]
+    RT["runtime/\nApplicationBootstrap"]
     EX["exceptions/\nAdapterError hierarchy"]
     CF["config/\nBaseAdapterSettings"]
-    PO["ports/\nBaseRepository · BaseProducer · BaseConsumer"]
-    HE["health/\nHealthCheck Protocol"]
     TE["telemetry/\nOTel bootstrap · get_tracer · get_meter"]
     TR["tracing/\nTracingProxy"]
     MW["middleware/\nTelemetryMiddleware · ASGI types"]
 
-    EX --> CF
-    CF --> PO
-    PO --> HE
-    HE --> TE
-    TE --> TR
-    TR --> MW
+    EX --> CF --> CO
+    CO --> PO
+    CO --> IN
+    CO --> PL --> RT
+    CO --> TE --> TR --> MW
 
     style EX fill:#1a1a1a,color:#F0F0F0,stroke:#6DB33F
     style CF fill:#1a1a1a,color:#F0F0F0,stroke:#6DB33F
-    style PO fill:#1a1a1a,color:#F0F0F0,stroke:#6DB33F
-    style HE fill:#141414,color:#F0F0F0,stroke:#4E8A2A
+    style CO fill:#1a1a1a,color:#8CC63F,stroke:#6DB33F
+    style PO fill:#141414,color:#F0F0F0,stroke:#4E8A2A
+    style IN fill:#141414,color:#F0F0F0,stroke:#4E8A2A
+    style PL fill:#141414,color:#F0F0F0,stroke:#4E8A2A
+    style RT fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TE fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TR fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style MW fill:#141414,color:#F0F0F0,stroke:#4E8A2A
@@ -46,13 +63,25 @@ Defines `AdapterError` and five typed subclasses: `AdapterConnectionError`, `Ada
 
 `BaseAdapterSettings` is a Pydantic `BaseSettings` subclass. Every adapter's settings class inherits from it and declares its own fields. Env var reading, type coercion, and validation happen at instantiation time — misconfigured services fail at startup, not at first request.
 
+### contracts/
+
+The canonical, apex contract layer (ADR-006). `Identity` (`name`/`version`/`capability`) + `Lifecycle` (`initialize`/`shutdown`/`health`) compose into `BasePort` — the single base every outbound port extends and the single type the plugin registry accepts. `Capability` is a closed `str` enum taxonomy (`PERSISTENCE`, `CACHE`, `QUEUE`, `SECRETS`, `FLAGS`, `STORAGE`, `TRANSPORT`, `INFERENCE`, `EMBEDDING`, `SCHEDULE`, `SEARCH` — see [capability-taxonomy.md](../architecture/capability-taxonomy.md)). `PluginStatus`/`PluginHealth`/`PluginContext` are the canonical lifecycle status/health/init-context trio. `PrincipalContext`/`TenantContext` are frozen identity dataclasses threaded through both `PluginContext` (outbound) and `RequestContext` (inbound).
+
 ### ports/
 
-Three generic `runtime_checkable` Protocols: `BaseRepository[T]`, `BaseProducer[T]`, `BaseConsumer[T]`. Adapters satisfy these structurally — no inheritance required. Any class with matching async method signatures passes the protocol check.
+Three generic `runtime_checkable` Protocols, each `BasePort` plus domain methods: `BaseRepository[T]`, `BaseProducer[T]`, `BaseConsumer[T]`. Adapters satisfy these structurally — no inheritance required. Every port is lifecycle-aware by definition; there is no lifecycle-free variant.
 
-### health/
+### inbound/
 
-`HealthCheck` Protocol with `ping()` (low-cost liveness) and `is_ready()` (full readiness). Every adapter implements both. Templates call `is_ready()` at startup and `ping()` on health check endpoints.
+The driving side of the hexagon. `UseCase[TInput, TOutput]` is the general driving contract; `CommandHandler[TInput]` and `QueryHandler[TInput, TOutput]` are its CQRS-flavoured specialisations. `RequestContext` (correlation id + optional `PrincipalContext`/`TenantContext`) is constructed by inbound adapters and passed into `execute()`.
+
+### plugins/
+
+`PluginRegistry` accepts any `BasePort` and keys `get()`/`get_all()` on the `Capability` enum. `get()` is strict — it raises `AmbiguousCapabilityError` when more than one port shares a capability, rather than silently returning the first match; use `get_all()` when that's the intended configuration. A "plugin" is just a registered `BasePort` — there is no separate plugin protocol.
+
+### runtime/
+
+`ApplicationBootstrap` is an optional composition root. Manages `PluginRegistry` registration and lifecycle (`configure` → `start` → `stop`), or as an async context manager.
 
 ### telemetry/
 
@@ -66,6 +95,10 @@ Idempotent OTel SDK bootstrap. Configures OTLP trace and metric exporters when `
 
 `TelemetryMiddleware` is a pure ASGI middleware compatible with FastAPI, Starlette, Litestar, and bare ASGI. It records one OTel span and five HTTP metric instruments per request and injects an `x-session-id` response header. Also exports five stdlib-only ASGI type aliases (`ASGIScope`, `ASGIMessage`, `Receive`, `Send`, `ASGIApp`) shared across the ecosystem.
 
+### testing/
+
+Reusable test doubles (`InMemoryRepository`, `FakeProducer`, `FakeConsumer` — all satisfy `BasePort`) and pytest contract-test base classes. `LifecycleContractTests` and `PortContractTests` are the shared `BasePort` conformance suite; `RepositoryContractTests`/`ProducerContractTests`/`ConsumerContractTests` build on `PortContractTests` and add domain-specific assertions.
+
 ---
 
 ## Key Design Properties
@@ -73,5 +106,6 @@ Idempotent OTel SDK bootstrap. Configures OTLP trace and metric exporters when `
 - **Zero domain logic** — `openframe-core` knows nothing about items, users, or any business concept.
 - **Zero infrastructure imports** — no FastAPI, no Modal, no driver imports. External dependencies are `opentelemetry-*`, `pydantic`, and `pydantic-settings` only.
 - **Namespace package** — `openframe/__init__.py` uses `pkgutil.extend_path` so multiple installed packages contribute to the `openframe.*` namespace without conflict.
-- **Stable contract** — the major version (`>=1.0,<2`) is the compatibility contract pinned by every other package in the ecosystem. Every public API decision is treated as permanent until a major version bump.
+- **One contract family, one canonical home per concept** — `contracts/` is the sole source of `Identity`, `Lifecycle`, `BasePort`, `Capability`, `PluginStatus`/`PluginHealth`/`PluginContext`, and `PrincipalContext`/`TenantContext`. No duplicate definitions exist elsewhere in the package (ADR-006).
+- **Major version is the compatibility contract** — `openframe-core` v3.0 is an intentional breaking change from v2.x with no deprecated aliases or shims. Downstream `openframe-adapters` packages pinned `>=2.0,<3` continue resolving to 2.x until explicitly migrated.
 - **Platform-agnostic** — no Modal, AWS, GCP, or RunPod references. `OPENFRAME_ENV` replaces `MODAL_ENV`. Modal users map the variable in their own `configure_env_vars()`.

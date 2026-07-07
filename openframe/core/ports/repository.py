@@ -1,12 +1,19 @@
 """
 openframe/core/ports/repository.py
 =====================================
-Generic persistence port for the OpenFrame ecosystem.
+Generic persistence port for the OpenFrame ecosystem (ADR-006).
 
-``BaseRepository[T]`` is the structural contract every database adapter
-implements. Adapters satisfy this protocol by structural subtyping — no
-inheritance from ``BaseRepository`` is required or desired. Any class whose
-async method signatures match is accepted.
+``BaseRepository[T]`` extends
+:class:`~openframe.core.contracts.port.BasePort` directly — it is
+``Identity + Lifecycle`` plus its own domain methods. There is exactly one
+lifecycle-aware definition of this port; the pre-v3 lifecycle-free version
+no longer exists.
+
+Adapters satisfy this protocol by structural subtyping — no inheritance
+from ``BaseRepository`` is required or desired. Any class whose async
+method signatures match, and that also satisfies ``BasePort``
+(``name``/``version``/``capability``/``initialize``/``shutdown``/
+``health``), is accepted.
 
 Runtime isinstance check::
 
@@ -16,12 +23,15 @@ Runtime isinstance check::
 The parameterised form is a static-analysis-only annotation. At runtime,
 always check against the unparameterised ``BaseRepository``.
 
-Dependency order: this module imports only from Python stdlib typing.
-No openframe.core imports.
+Dependency order:
+    contracts/port      → contracts/identity + contracts/lifecycle
+    ports/repository    → contracts/port
 """
 from __future__ import annotations
 
 from typing import Protocol, TypeVar, runtime_checkable
+
+from openframe.core.contracts.port import BasePort
 
 __all__ = ["BaseRepository"]
 
@@ -29,12 +39,14 @@ T = TypeVar("T")
 
 
 @runtime_checkable
-class BaseRepository(Protocol[T]):
+class BaseRepository(BasePort, Protocol[T]):
     """
-    Generic persistence port.
+    Generic persistence port. ``BasePort`` (Identity + Lifecycle) plus
+    domain-specific CRUD methods.
 
     Adapters implement this protocol structurally — no inheritance needed.
-    Any class with matching async method signatures satisfies ``BaseRepository``.
+    Any class with matching async method signatures, plus the
+    ``BasePort`` members, satisfies ``BaseRepository``.
 
     Type parameter ``T`` is the domain entity the repository manages.
 
@@ -43,7 +55,7 @@ class BaseRepository(Protocol[T]):
         isinstance(repo, BaseRepository)       # ✓ works
         isinstance(repo, BaseRepository[str])  # ✗ raises TypeError
 
-    Methods:
+    Domain methods:
         get:    Retrieve a single entity by ID.
         list:   Return a paginated slice plus total count.
         create: Persist a new entity and return it with any backend-assigned
@@ -52,6 +64,9 @@ class BaseRepository(Protocol[T]):
                 entity or None if the entity did not exist.
         delete: Remove an entity by ID. Returns True if deleted, False if
                 the entity did not exist.
+
+    Plus, inherited from ``BasePort``: ``name``, ``version``, ``capability``,
+    ``initialize``, ``shutdown``, ``health``.
     """
 
     async def get(self, entity_id: str) -> T | None:

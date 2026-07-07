@@ -1,25 +1,38 @@
 site_name: openframe-core — Technical Docs
-site_description: Architecture, module reference, and developer guide for openframe-core
+site_description: Architecture, module reference, operations, and developer guide for openframe-core
 site_author: Furious Meteors Engineering
 site_url: https://furious-meteors.github.io/openframe-core/
+repo_name: Furious-Meteors/openframe-core
+repo_url: https://github.com/Furious-Meteors/openframe-core
+edit_uri: edit/production/docs/
 
+strict: true
 docs_dir: docs
 site_dir: site
+
+watch:
+  - mkdocs.yml
+  - docs
 
 # ── Theme ──────────────────────────────────────────────────────────────────
 theme:
   name: material
+  language: en
   favicon: assets/images/favicon.png
-  logo: assets/images/logo-dark.png
+  logo: assets/images/openframe-logo-light.png
+  icon:
+    repo: fontawesome/brands/github
 
   palette:
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-    - scheme: default
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       primary: custom
       accent: custom
       toggle:
@@ -31,6 +44,10 @@ theme:
     code: JetBrains Mono
 
   features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tracking
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.sections
@@ -42,22 +59,26 @@ theme:
     - search.highlight
     - search.suggest
     - search.share
+    - content.action.edit
+    - content.action.view
     - content.code.copy
     - content.code.annotate
+    - content.tabs.link
     - content.tooltips
     - toc.follow
 
 extra_css:
-  - assets/stylesheets/extra.css
+  - stylesheets/extra.css
 
 extra_javascript:
-  - assets/javascripts/extra.js
-  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
+  - javascripts/extra.js
 
 # ── Plugins ────────────────────────────────────────────────────────────────
 plugins:
   - search:
       separator: '[\s\-\.]+'
+  - tags
+  - include-markdown
 
 # ── Markdown Extensions ────────────────────────────────────────────────────
 markdown_extensions:
@@ -67,6 +88,8 @@ markdown_extensions:
   - def_list
   - footnotes
   - md_in_html
+  - meta
+  - tables
   - toc:
       permalink: true
       toc_depth: 3
@@ -92,14 +115,19 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
-  - tables
 
 # ── Extra ──────────────────────────────────────────────────────────────────
 extra:
   generator: false
+  status:
+    new: Recently added
+    deprecated: Deprecated
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/Furious-Meteors/openframe-core
+      name: openframe-core on GitHub
+
+copyright: Copyright &copy; 2026 Furious Meteors Engineering
 
 # ── Navigation ─────────────────────────────────────────────────────────────
 nav:
@@ -120,12 +148,16 @@ nav:
         - Adapter Lifecycle: technical/architecture/package-journey/adapter-lifecycle.md
         - Tracing Flow: technical/architecture/package-journey/tracing-flow.md
         - Error Propagation: technical/architecture/package-journey/error-propagation.md
-      - ADRs:
+      - Architecture Decisions:
+        - Decision Index: technical/architecture/adrs/index.md
         - ADR-001 Namespace: technical/architecture/adrs/adr-001-namespace.md
         - ADR-002 Hexagonal Architecture: technical/architecture/adrs/adr-002-hexagonal.md
         - ADR-003 Async Strategy: technical/architecture/adrs/adr-003-async.md
         - ADR-004 Pydantic Settings: technical/architecture/adrs/adr-004-pydantic.md
         - ADR-005 Middleware Telemetry: technical/architecture/adrs/adr-005-middleware.md
+        - ADR-006 Unified Port Lifecycle: technical/architecture/adrs/adr-006-unified-port-lifecycle.md
+      - Capability Taxonomy: technical/architecture/capability-taxonomy.md
+      - Error Taxonomy: technical/architecture/error-taxonomy.md
       - Design Decisions: technical/architecture/design-decisions.md
     - Infrastructure:
       - Platform: technical/infrastructure/platform.md
@@ -152,13 +184,17 @@ nav:
       - Overview: code/modules/index.md
       - exceptions: code/modules/exceptions.md
       - config: code/modules/config.md
+      - contracts: code/modules/contracts.md
       - ports: code/modules/ports.md
-      - health: code/modules/health.md
+      - inbound: code/modules/inbound.md
       - telemetry: code/modules/telemetry.md
       - tracing: code/modules/tracing.md
       - middleware: code/modules/middleware.md
-    - CI/CD:
-      - Pipeline: code/cicd/pipeline.md
+      - plugins: code/modules/plugins.md
+      - runtime: code/modules/runtime.md
+      - testing: code/modules/testing.md
+      - health (removed): code/modules/health.md
+    - CI/CD Pipeline: code/cicd/pipeline.md
 
   - Developer Guide:
     - Quick Start: developer-guide/quick-start/index.md
@@ -167,3 +203,10 @@ nav:
     - First Code Change: developer-guide/first-change.md
     - Local Development: developer-guide/local-dev.md
     - Debugging Guide: developer-guide/debugging.md
+
+  - Contributing:
+    - Documentation Guide: contributing/documentation.md
+    - Theme and Graphics: contributing/theme-and-graphics.md
+    - Responsive Content: contributing/responsive-content.md
+
+  - Changelog: changelog.md

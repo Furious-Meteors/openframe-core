@@ -8,7 +8,7 @@ An adapter raises `AdapterConnectionError` on every operation. The service is re
 
 - All requests to routes that use a database adapter return HTTP 500
 - Logs show `[postgres.connect] Cannot reach Postgres` or similar
-- `ping()` returns `False`
+- `port.health()` returns `PluginHealth(status=PluginStatus.UNAVAILABLE, ...)`
 - OTel spans show `StatusCode.ERROR` on `repository.*.get` / `repository.*.create`
 
 ---
@@ -26,15 +26,17 @@ print('connected')
 "
 ```
 
-**2. Check `is_ready()` directly.**
+**2. Check `health()` directly via `PluginRegistry`.**
 
 ```python
-from openframe.adapters.db.postgres import PostgresRepository, PostgresSettings
+from openframe.core.contracts import Capability
 import asyncio
 
-repo = PostgresRepository(PostgresSettings())
-print(asyncio.run(repo.ping()))       # True / False
-print(asyncio.run(repo.is_ready()))   # True / False
+# If you have access to the registry instance:
+port = registry.get(Capability.PERSISTENCE)
+health = asyncio.run(port.health())
+print(health.status)    # PluginStatus.READY / DEGRADED / UNAVAILABLE
+print(health.message)   # error detail
 ```
 
 **3. Verify env vars are present.**
@@ -69,4 +71,13 @@ git push origin production
 
 ## Prevention
 
-Call `adapter.is_ready()` in the `lifespan` handler and refuse startup if it returns `False`. A service that cannot reach its database should not start serving traffic.
+Check `port.health()` in the `lifespan` handler and refuse startup if it returns `PluginStatus.UNAVAILABLE`. A service that cannot reach its database should not start serving traffic.
+
+```python
+from openframe.core.contracts import Capability, PluginStatus
+
+port = registry.get(Capability.PERSISTENCE)
+health = await port.health()
+if health.status == PluginStatus.UNAVAILABLE:
+    raise RuntimeError(f"Port {port.name} unavailable at startup: {health.message}")
+```

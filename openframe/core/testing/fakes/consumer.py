@@ -1,21 +1,24 @@
 """
 openframe/core/testing/fakes/consumer.py
 ==========================================
-FakeConsumer — a reusable test double for message consumers.
+FakeConsumer — a reusable test double for message consumers (ADR-006).
 
-Satisfies :class:`~openframe.core.ports.BaseConsumer` structurally.
+Satisfies :class:`~openframe.core.ports.BaseConsumer` structurally —
+including the ``BasePort`` identity/lifecycle members it now extends.
 Zero external dependencies.
 
 .. stability: beta
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/fakes/consumer → ports
+    testing/fakes/consumer → contracts + ports
 """
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from typing import Generic, TypeVar
+
+from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
 
 __all__ = ["FakeConsumer"]
 
@@ -36,8 +39,9 @@ class FakeConsumer(Generic[T]):
     When a handler raises, :meth:`nack` is called automatically and the
     message is appended to :attr:`nacked`.
 
-    Satisfies :class:`~openframe.core.ports.BaseConsumer` via structural
-    subtyping — ``isinstance(consumer, BaseConsumer)`` returns ``True``.
+    Satisfies :class:`~openframe.core.ports.BaseConsumer` (which now
+    extends ``BasePort``) via structural subtyping —
+    ``isinstance(consumer, BaseConsumer)`` returns ``True``.
 
     .. stability: beta
 
@@ -56,8 +60,25 @@ class FakeConsumer(Generic[T]):
         assert consumer.nacked == []
     """
 
-    def __init__(self) -> None:
-        """Initialise an empty fake consumer."""
+    def __init__(
+        self,
+        *,
+        name: str = "fake-consumer",
+        version: str = "1.0.0",
+        capability: Capability = Capability.QUEUE,
+    ) -> None:
+        """
+        Initialise an empty fake consumer.
+
+        Args:
+            name:       Identity name.
+            version:    Identity version string.
+            capability: Identity capability. Defaults to ``Capability.QUEUE``.
+        """
+        self.name = name
+        self.version = version
+        self.capability = capability
+        self._initialized = False
         self._pending: list[T] = []
         self.acked: list[T] = []
         self.nacked: list[T] = []
@@ -139,3 +160,26 @@ class FakeConsumer(Generic[T]):
         Idempotent — safe to call multiple times.  Pending messages are
         preserved so tests can inspect state after close.
         """
+
+    # ------------------------------------------------------------------
+    # BasePort (Identity + Lifecycle) interface
+    # ------------------------------------------------------------------
+
+    async def initialize(self, context: PluginContext) -> None:
+        """Mark the consumer as initialized. No-op beyond the flag."""
+        self._initialized = True
+
+    async def shutdown(self) -> None:
+        """
+        Mark the consumer as no longer initialized.
+
+        Idempotent — safe to call multiple times, including before
+        :meth:`initialize` has ever been called.
+        """
+        self._initialized = False
+
+    async def health(self) -> PluginHealth:
+        """Return READY once initialized, REGISTERED otherwise. Never raises."""
+        if not self._initialized:
+            return PluginHealth(status=PluginStatus.REGISTERED)
+        return PluginHealth(status=PluginStatus.READY)

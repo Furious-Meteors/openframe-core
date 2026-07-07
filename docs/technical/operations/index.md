@@ -21,8 +21,8 @@ Monitoring and runbooks for `openframe-core` in production. This section is for 
 
 | Tool | Effect |
 |---|---|
-| `adapter.ping()` | Low-cost connectivity check |
-| `adapter.is_ready()` | Full readiness verification |
+| `await port.health()` | Returns `PluginHealth` with `status`, `message`, and `details` |
+| `registry.get(Capability.X)` | Retrieve the registered port for a capability |
 | `modal app logs <app-name>` | Stream live logs |
 | `modal app stop <app-name>` | Stop environment |
 | `record_lifecycle_event("recovery", {...})` | Record recovery event in metrics |

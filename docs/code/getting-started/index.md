@@ -23,11 +23,13 @@ pip install openframe-core
 
 ```bash
 python -c "
+from openframe.core.contracts import BasePort, Capability, PluginHealth, PluginStatus
 from openframe.core.ports import BaseRepository, BaseProducer, BaseConsumer
-from openframe.core.exceptions import AdapterError
+from openframe.core.exceptions import OpenFrameError, AdapterError
+from openframe.core.inbound import UseCase, RequestContext
+from openframe.core.plugins import PluginRegistry
 from openframe.core.config import BaseAdapterSettings
-from openframe.core.health import HealthCheck
-from openframe.core.telemetry import get_tracer, get_meter
+from openframe.core.telemetry import get_tracer, get_meter, record_error
 from openframe.core.tracing import TracingProxy
 from openframe.core.middleware import TelemetryMiddleware, ASGIApp
 print('openframe-core OK')
@@ -65,14 +67,20 @@ export OPENFRAME_ENV="dev"
 ```python
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from openframe.core.contracts import Capability
+from openframe.core.plugins import PluginRegistry
 from openframe.core.telemetry import setup_telemetry, record_lifecycle_event
 from openframe.core.middleware import TelemetryMiddleware
+
+registry = PluginRegistry()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_telemetry()                          # initialise OTel — must be first
     record_lifecycle_event("cold_start")       # record startup in metrics
+    await registry.initialize_all()            # initialise all registered ports
     yield
+    await registry.shutdown_all()              # LIFO shutdown
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(TelemetryMiddleware)        # attach telemetry middleware

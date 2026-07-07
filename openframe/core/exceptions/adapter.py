@@ -1,12 +1,12 @@
 """
-openframe/core/exceptions/errors.py
-=====================================
-Structured exception hierarchy for all OpenFrame adapter packages.
+openframe/core/exceptions/adapter.py
+======================================
+Adapter (backend/infrastructure) exception family.
 
-Every adapter package raises only AdapterError subclasses — never raw
+Every adapter package raises only ``AdapterError`` subclasses — never raw
 driver exceptions (psycopg errors, aioredis errors, aiokafka errors, etc.).
-Services catch AdapterError at a single point regardless of which adapter
-is wired in.
+Services catch ``AdapterError`` (or the ecosystem-wide ``OpenFrameError``)
+at a single point regardless of which adapter is wired in.
 
 Raise with cause chaining at the raise site::
 
@@ -20,9 +20,19 @@ Raise with cause chaining at the raise site::
             cause=exc,
         ) from exc
 
-Dependency order: this module has no imports from openframe.core.
+All classes here derive from
+:class:`~openframe.core.exceptions.base.OpenFrameError`, so every adapter
+error is also catchable as ``OpenFrameError``. Each subclass sets its own
+``domain.kind`` ``code`` and, where meaningful, a ``retryable`` default.
+
+Dependency order: imports ``openframe.core.exceptions.base`` + ``.codes`` only.
+
+.. stability: stable
 """
 from __future__ import annotations
+
+from openframe.core.exceptions.base import OpenFrameError
+from openframe.core.exceptions.codes import ErrorCode
 
 __all__ = [
     "AdapterError",
@@ -33,13 +43,15 @@ __all__ = [
     "AdapterTimeoutError",
 ]
 
+__stability__ = "stable"
 
-class AdapterError(Exception):
+
+class AdapterError(OpenFrameError):
     """
     Base exception for all OpenFrame adapter packages.
 
-    All adapter packages raise only AdapterError subclasses — never raw
-    driver exceptions. Services catch AdapterError for a single catch
+    All adapter packages raise only ``AdapterError`` subclasses — never raw
+    driver exceptions. Services catch ``AdapterError`` for a single catch
     point regardless of which adapter is wired in.
 
     Attributes:
@@ -49,11 +61,17 @@ class AdapterError(Exception):
         cause:     Underlying driver exception, if any. Always chain at
                    the raise site: ``raise AdapterXError(...) from exc``.
 
+    In addition to the inherited ``OpenFrameError`` fields (``code``,
+    ``severity``, ``retryable``, ``correlation_id``, ``context``), the
+    ``adapter`` and ``operation`` values are also recorded in ``context``.
+
     The ``__str__`` format is::
 
         [adapter.operation] message
         [adapter.operation] message — caused by: <cause>
     """
+
+    code = ErrorCode.ADAPTER
 
     def __init__(
         self,
@@ -71,17 +89,19 @@ class AdapterError(Exception):
             operation: Operation that failed (e.g. "get", "create").
             cause:     Underlying driver exception, or None.
         """
-        super().__init__(message)  # only message → self.args = (message,)
-        self.message = message
+        super().__init__(
+            message,
+            cause=cause,
+            context={"adapter": adapter, "operation": operation},
+        )
         self.adapter = adapter
         self.operation = operation
-        self.cause = cause
 
     def __str__(self) -> str:
         """
         Return a human-readable string including adapter, operation, and message.
 
-        If a cause is present it is appended after \" — caused by: \".
+        If a cause is present it is appended after " — caused by: ".
         """
         base = f"[{self.adapter}.{self.operation}] {self.message}"
         if self.cause:
@@ -105,6 +125,8 @@ class AdapterConnectionError(AdapterError):
     Typical causes: network unreachable, wrong host/port, TLS handshake
     failure, authentication rejected before a connection is established.
 
+    Retryable — a transient connectivity failure is usually safe to retry.
+
     Raise with cause chaining::
 
         raise AdapterConnectionError(
@@ -115,6 +137,9 @@ class AdapterConnectionError(AdapterError):
         ) from original_exc
     """
 
+    code = ErrorCode.ADAPTER_CONNECTION
+    retryable = True
+
 
 class AdapterQueryError(AdapterError):
     """
@@ -122,6 +147,8 @@ class AdapterQueryError(AdapterError):
 
     Typical causes: constraint violation, syntax error, permission denied
     on a specific table or topic, partial failure mid-batch.
+
+    Not retryable by default — a failed query usually fails again identically.
 
     Raise with cause chaining::
 
@@ -133,6 +160,8 @@ class AdapterQueryError(AdapterError):
         ) from original_exc
     """
 
+    code = ErrorCode.ADAPTER_QUERY
+
 
 class AdapterNotFoundError(AdapterError):
     """
@@ -141,6 +170,8 @@ class AdapterNotFoundError(AdapterError):
     This is a semantic "not found" — the adapter successfully queried
     the backend but the entity is absent. Distinct from AdapterQueryError
     (which means the query itself failed).
+
+    Not retryable — the entity's absence is a definitive result.
 
     Raise without a cause when the backend returns a definitive empty
     result::
@@ -151,6 +182,9 @@ class AdapterNotFoundError(AdapterError):
             operation="get",
         )
     """
+
+    code = ErrorCode.ADAPTER_NOT_FOUND
+    retryable = False
 
 
 class AdapterConfigurationError(AdapterError):
@@ -170,6 +204,8 @@ class AdapterConfigurationError(AdapterError):
         )
     """
 
+    code = ErrorCode.ADAPTER_CONFIGURATION
+
 
 class AdapterTimeoutError(AdapterError):
     """
@@ -177,6 +213,8 @@ class AdapterTimeoutError(AdapterError):
 
     Distinct from AdapterConnectionError — the connection was established
     but the operation did not complete within the allowed window.
+
+    Retryable — a timeout is often transient (load spike, slow query).
 
     Raise with cause chaining when wrapping an asyncio.TimeoutError::
 
@@ -187,3 +225,6 @@ class AdapterTimeoutError(AdapterError):
             cause=original_exc,
         ) from original_exc
     """
+
+    code = ErrorCode.ADAPTER_TIMEOUT
+    retryable = True

@@ -4,7 +4,7 @@ Common failure patterns and how to diagnose them.
 
 ---
 
-## AdapterError in Logs
+## OpenFrameError in Logs
 
 Every `AdapterError` produces a structured string:
 
@@ -13,19 +13,54 @@ Every `AdapterError` produces a structured string:
 [kafka.publish] broker timeout — caused by: asyncio.TimeoutError
 ```
 
-The format `[adapter.operation]` tells you immediately which adapter failed and which operation was running. The `cause` field carries the original driver exception.
+The format `[adapter.operation]` tells you immediately which adapter failed and which operation was running. The `cause` field carries the original driver exception. All adapter errors also carry `code`, `severity`, and `retryable`:
+
+```python
+print(exc.code)        # "adapter.timeout"
+print(exc.retryable)   # True
+print(exc.severity)    # "ERROR"
+```
 
 Catch at the appropriate specificity:
 
 ```python
+from openframe.core.exceptions import (
+    OpenFrameError,
+    AdapterNotFoundError,
+    AdapterTimeoutError,
+    AdapterError,
+)
+
 try:
     entity = await repo.get(entity_id)
 except AdapterNotFoundError:
     # Handle 404
 except AdapterTimeoutError:
-    # Handle timeout — maybe retry
+    # Handle timeout — maybe retry (exc.retryable == True)
 except AdapterError:
     # Catch-all for unexpected adapter failures
+except OpenFrameError:
+    # Catch-all for plugin/registry failures too
+```
+
+---
+
+## PluginRegistry Failures
+
+**`PluginNotFoundError`** — no port registered for the requested `Capability`. Verify `registry.register(port)` was called before `registry.get(Capability.X)`.
+
+**`AmbiguousCapabilityError`** — more than one port registered for the capability passed to `get()`. Use `registry.get_all(Capability.X)` if multiple same-capability ports is intentional.
+
+**`PluginInitializationError`** — a port's `initialize()` raised. The registry rolls back already-initialised ports before re-raising. Check the `cause` for the original error.
+
+```python
+from openframe.core.exceptions import PluginInitializationError
+
+try:
+    await registry.initialize_all()
+except PluginInitializationError as exc:
+    print(exc.plugin_name)   # which port failed
+    print(exc.cause)         # original exception from initialize()
 ```
 
 ---
@@ -68,7 +103,9 @@ export DATABASE_URL="postgresql://user:pass@localhost/db"
 isinstance(my_repo, BaseRepository)   # False — unexpected
 ```
 
-The class is missing one or more required methods. Check the Protocol definition in [ports](../code/modules/ports.md) and verify all async methods have matching signatures. A common miss is returning `list[T]` where `tuple[list[T], int]` is required in `list()`.
+The class is missing one or more required members. In v3, `BaseRepository` extends `BasePort`, so the class must also have `name`, `version`, `capability`, `initialize`, `shutdown`, and `health` in addition to the domain methods. A common miss is omitting lifecycle members or returning `list[T]` where `tuple[list[T], int]` is required in `list()`.
+
+Check against [ports module](../code/modules/ports.md) for the full member list.
 
 ---
 

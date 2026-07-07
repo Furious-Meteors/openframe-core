@@ -1,21 +1,23 @@
 """
 openframe/core/testing/fakes/producer.py
 ==========================================
-FakeProducer — a reusable test double for message producers.
+FakeProducer — a reusable test double for message producers (ADR-006).
 
-Satisfies :class:`~openframe.core.ports.BaseProducer` structurally.
+Satisfies :class:`~openframe.core.ports.BaseProducer` structurally —
+including the ``BasePort`` identity/lifecycle members it now extends.
 Zero external dependencies.
 
 .. stability: beta
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/fakes/producer → ports + exceptions
+    testing/fakes/producer → contracts + ports + exceptions
 """
 from __future__ import annotations
 
 from typing import Generic, TypeVar
 
+from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
 from openframe.core.exceptions import AdapterQueryError
 
 __all__ = ["FakeProducer"]
@@ -35,8 +37,9 @@ class FakeProducer(Generic[T]):
 
     Simulates publish failure via ``fail_on_publish=True``.
 
-    Satisfies :class:`~openframe.core.ports.BaseProducer` via structural
-    subtyping — ``isinstance(producer, BaseProducer)`` returns ``True``.
+    Satisfies :class:`~openframe.core.ports.BaseProducer` (which now
+    extends ``BasePort``) via structural subtyping —
+    ``isinstance(producer, BaseProducer)`` returns ``True``.
 
     .. stability: beta
 
@@ -55,16 +58,30 @@ class FakeProducer(Generic[T]):
         # raises AdapterQueryError on publish / publish_batch
     """
 
-    def __init__(self, *, fail_on_publish: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        name: str = "fake-producer",
+        version: str = "1.0.0",
+        capability: Capability = Capability.QUEUE,
+        fail_on_publish: bool = False,
+    ) -> None:
         """
         Initialise an empty fake producer.
 
         Args:
+            name:            Identity name.
+            version:         Identity version string.
+            capability:      Identity capability. Defaults to ``Capability.QUEUE``.
             fail_on_publish: When ``True``, :meth:`publish` and
                              :meth:`publish_batch` raise
                              :class:`~openframe.core.exceptions.AdapterQueryError`.
         """
+        self.name = name
+        self.version = version
+        self.capability = capability
         self._fail = fail_on_publish
+        self._initialized = False
         self.published: list[T] = []
         self.batches: list[list[T]] = []
 
@@ -121,6 +138,29 @@ class FakeProducer(Generic[T]):
         Idempotent — safe to call multiple times.  The in-memory state is
         preserved so tests can still inspect :attr:`published` after close.
         """
+
+    # ------------------------------------------------------------------
+    # BasePort (Identity + Lifecycle) interface
+    # ------------------------------------------------------------------
+
+    async def initialize(self, context: PluginContext) -> None:
+        """Mark the producer as initialized. No-op beyond the flag."""
+        self._initialized = True
+
+    async def shutdown(self) -> None:
+        """
+        Mark the producer as no longer initialized.
+
+        Idempotent — safe to call multiple times, including before
+        :meth:`initialize` has ever been called.
+        """
+        self._initialized = False
+
+    async def health(self) -> PluginHealth:
+        """Return READY once initialized, REGISTERED otherwise. Never raises."""
+        if not self._initialized:
+            return PluginHealth(status=PluginStatus.REGISTERED)
+        return PluginHealth(status=PluginStatus.READY)
 
     # ------------------------------------------------------------------
     # Test helpers

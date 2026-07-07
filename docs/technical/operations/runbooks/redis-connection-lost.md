@@ -7,7 +7,7 @@ The Redis adapter loses its connection mid-operation. Subsequent operations rais
 ## Symptoms
 
 - Operations that use Redis (caching, pub/sub, queue backing) start raising `AdapterConnectionError`
-- `ping()` returns `False`
+- `port.health()` returns `PluginHealth(status=PluginStatus.UNAVAILABLE, ...)`
 - OTel spans show `AdapterConnectionError` on `cache.*` or `queue.*` child spans
 
 ---

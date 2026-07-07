@@ -109,3 +109,43 @@ Increment a named lifecycle event counter. Platform-agnostic replacement for `re
 record_lifecycle_event("cold_start")
 record_lifecycle_event("worker_restart", {"reason": "oom"})
 ```
+
+---
+
+### `record_error(exc, span)`
+
+```python
+def record_error(
+    exc: OpenFrameError,
+    span: trace.Span | None = None,
+) -> None
+```
+
+Record a structured `OpenFrameError` on the active (or provided) OTel span. Called automatically at each boundary seam (`TracingProxy`, `TelemetryMiddleware`, `PluginRegistry`). Can also be called directly.
+
+**What it does:**
+
+1. Sets `error.code`, `error.severity`, `error.retryable` span attributes
+2. Records the exception event on the active span
+3. Stamps `exc.correlation_id` with the active trace id (if `correlation_id` was `None`)
+4. Increments `openframe.error.count` metric with `error.code` label — **deduped**: each error object is recorded exactly once across all seams
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| `exc` | `OpenFrameError` | — | The error to record |
+| `span` | `trace.Span \| None` | `None` | Span to record on. Defaults to the currently active span |
+
+**Example:**
+
+```python
+from openframe.core.telemetry import record_error
+from openframe.core.exceptions import OpenFrameError
+
+try:
+    await do_something()
+except OpenFrameError as exc:
+    record_error(exc)   # span attributes + one metric increment (deduped)
+    raise
+```

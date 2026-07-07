@@ -1,11 +1,14 @@
 """
 openframe/core/ports/
 ======================
-Generic Protocol ports for the OpenFrame ecosystem.
+Generic Protocol ports for the OpenFrame ecosystem — the outbound
+(driven) side of the hexagon.
 
-Every adapter package implements one or more of these protocols structurally
-(no inheritance needed). Services depend only on these ports — never on
-concrete adapter implementations.
+Every port extends :class:`~openframe.core.contracts.port.BasePort`
+directly (ADR-006) — ``Identity + Lifecycle`` plus its own domain methods.
+Adapters implement these protocols structurally (no inheritance needed).
+Services depend only on these ports — never on concrete adapter
+implementations.
 
 Usage::
 
