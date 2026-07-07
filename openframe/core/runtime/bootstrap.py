@@ -133,13 +133,20 @@ class ApplicationBootstrap:
 
     async def stop(self) -> None:
         """
-        Shut down all ports in reverse initialization order.
+        Shut down all ports then flush and shut down the OTel SDK.
 
-        Delegates to
+        Port shutdown delegates to
         :meth:`~openframe.core.plugins.registry.PluginRegistry.shutdown_all`.
-        Never raises — port errors are logged and shutdown continues.
+        Telemetry shutdown flushes the ``BatchSpanProcessor`` queue so that
+        spans recorded during the current invocation are not silently dropped
+        at process exit.
+
+        Never raises — both port and telemetry errors are logged and shutdown
+        continues so that a failing port does not prevent the span flush.
         """
         await self._registry.shutdown_all()
+        from openframe.core.telemetry import shutdown_telemetry  # lazy — telemetry is optional
+        shutdown_telemetry()
 
     async def health(self) -> dict[str, PluginHealth]:
         """

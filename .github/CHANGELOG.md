@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`openframe.core.telemetry.shutdown_telemetry()`** — flushes and shuts
+  down the OTel SDK, ensuring the `BatchSpanProcessor` exports all buffered
+  spans before process exit. Idempotent, never raises, resets `_INITIALISED`
+  so `setup_telemetry()` can run again (useful in tests).
+  `ApplicationBootstrap.stop()` calls it automatically after port shutdown.
+  Templates that do not use `ApplicationBootstrap` should call it in the
+  `lifespan` teardown path.
+
+- **`openframe.core.tracing.propagation`** — W3C TraceContext inject/extract
+  helpers for message-broker adapters: `inject(carrier)` writes
+  `traceparent` into a header dict; `extract(carrier)` reads it back and
+  returns an OTel `Context`. Centralises what was previously private inside
+  the Kafka adapter so every broker adapter shares one implementation.
+  Re-exported as `openframe.core.tracing.propagation`.
+
 ### Fixed
 
 #### CI/CD
@@ -33,6 +50,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [3.0.0] — 2026-07-07
+
+### Architecture scorecard
+
+| Dimension | Score | Notes |
+|---|---|---|
+| Contract design | **9.5 / 10** | `Capability` enum closes the open-string gap; `BasePort` unification removes the dual-mechanism ambiguity. |
+| Error model | **9.5 / 10** | `StrEnum` + decentralised `domain.kind` convention is the correct extensibility model for a multi-package ecosystem. |
+| Testing infrastructure | **9.0 / 10** | `testing/contracts/` + `testing/fakes/` centralise what every adapter was duplicating — highest-leverage addition for the ecosystem. |
+| Composition / wiring | **7.0 / 10** | `ApplicationBootstrap` names the third option, but `shutdown_telemetry()` is still missing — lifecycle is not complete. |
+| Telemetry | **8.0 / 10** | Sidecar architecture, bounded-queue export, `record_error` seam — no shutdown flush hook yet.
 
 ### BREAKING CHANGE
 

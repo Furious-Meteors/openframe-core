@@ -135,6 +135,41 @@ sequenceDiagram
 
 ---
 
+## Architecture Scorecard — v3.0.0
+
+Scores reflect the state of `openframe-core` after the v3.0.0 release.
+Each dimension is rated /10. "Why it moved" is the concrete reason the
+score changed from the pre-v3 baseline.
+
+| Dimension | Pre-v3 | v3.0.0 | Why it moved |
+|---|---|---|---|
+| Contract design | 9.0 | **9.5** | `Capability` enum closes the open-string gap; `BasePort` unification removes the dual-mechanism ambiguity (lifecycle-free port + separate `OpenFramePlugin`). |
+| Error model | 9.0 | **9.5** | `StrEnum` + decentralised `domain.kind` convention is the right extensibility model for a multi-package ecosystem — downstream packages declare their own codes without touching the core enum. |
+| Testing infrastructure | — | **9.0** | `testing/contracts/` and `testing/fakes/` centralise what every adapter was duplicating independently. Highest-leverage addition for the ecosystem as a whole. |
+| Composition / wiring | 5.0 | **7.0** | `ApplicationBootstrap` names the third composition option. Held back: `shutdown_telemetry()` is still absent — lifecycle is not complete until the OTel SDK is flushed and shut down on process exit (see open gap below). |
+| Telemetry | 7.0 | **8.0** | Sidecar architecture, bounded-queue metric export, and `record_error()` seam are the right design. Held back: no shutdown flush hook yet — spans are silently dropped on every normal process shutdown. |
+
+### Resolved gaps (post-v3.0.0)
+
+Both gaps identified in the v3.0.0 scorecard review have been resolved:
+
+**Gap 1 — `shutdown_telemetry()` ✓**
+
+`openframe.core.telemetry.shutdown_telemetry()` now flushes and shuts
+down both the `TracerProvider` (forcing `BatchSpanProcessor` export) and
+the `MeterProvider` before returning. `ApplicationBootstrap.stop()` calls
+it automatically. Templates that do not use `ApplicationBootstrap` should
+call it in the `lifespan` teardown path.
+
+**Gap 2 — `openframe.core.tracing.propagation` ✓**
+
+`openframe/core/tracing/propagation.py` is now shipped. Exposes
+`inject(carrier)` and `extract(carrier)` as named wrappers around the OTel
+propagator API — all broker adapters (Kafka, NATS, RabbitMQ, …) import
+from this single module.
+
+---
+
 ## Deployment Topology
 
 `openframe-core` is a library — it has no runtime process. It is installed

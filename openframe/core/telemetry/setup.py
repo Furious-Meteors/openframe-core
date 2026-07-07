@@ -96,6 +96,7 @@ from openframe.core.exceptions import OpenFrameError
 
 __all__ = [
     "setup_telemetry",
+    "shutdown_telemetry",
     "get_tracer",
     "get_meter",
     "record_lifecycle_event",
@@ -103,6 +104,8 @@ __all__ = [
 ]
 
 _INITIALISED: bool = False
+_tracer_provider: TracerProvider | None = None
+_meter_provider: MeterProvider | None = None
 _logger = logging.getLogger(__name__)
 
 # Attribute stamped on an error the first time record_error counts it, so a
@@ -208,12 +211,53 @@ def setup_telemetry() -> None:
             "(set OTEL_EXPORTER_OTLP_ENDPOINT to enable export)",
         )
 
+    global _tracer_provider, _meter_provider
     trace.set_tracer_provider(tracer_provider)
     metrics.set_meter_provider(meter_provider)
+    _tracer_provider = tracer_provider
+    _meter_provider = meter_provider
 
     LoggingInstrumentor().instrument(set_logging_format=True)
 
     _INITIALISED = True
+
+
+def shutdown_telemetry() -> None:
+    """
+    Flush and shut down the OTel SDK.
+
+    Forces the ``BatchSpanProcessor`` to export all buffered spans and the
+    ``PeriodicExportingMetricReader`` to flush its last data point before the
+    process exits. Must be called at application shutdown — in the ``lifespan``
+    handler's teardown path, or via ``ApplicationBootstrap.stop()``.
+
+    Idempotent — safe to call even if ``setup_telemetry()`` was never called,
+    and safe to call multiple times. Resets the ``_INITIALISED`` guard and
+    clears the ``lru_cache`` entries so ``setup_telemetry()`` can run again
+    (useful in tests).
+
+    This function never raises — a shutdown error must not mask the original
+    exception propagating through a ``finally`` block.
+    """
+    global _INITIALISED, _tracer_provider, _meter_provider
+
+    if _tracer_provider is not None:
+        try:
+            _tracer_provider.shutdown()
+        except Exception:  # noqa: BLE001
+            _logger.debug("shutdown_telemetry: TracerProvider shutdown failed", exc_info=True)
+        _tracer_provider = None
+
+    if _meter_provider is not None:
+        try:
+            _meter_provider.shutdown()
+        except Exception:  # noqa: BLE001
+            _logger.debug("shutdown_telemetry: MeterProvider shutdown failed", exc_info=True)
+        _meter_provider = None
+
+    get_tracer.cache_clear()
+    get_meter.cache_clear()
+    _INITIALISED = False
 
 
 @lru_cache(maxsize=32)

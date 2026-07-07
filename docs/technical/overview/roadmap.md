@@ -6,6 +6,8 @@
 
 ### openframe-core
 
+Lower-priority items:
+
 - `test_middleware_types.py` — add missing test file for ASGI type alias imports
 - Remove redundant `pytest.ini` — configuration already present in `pyproject.toml`
 - Pin OTel SDK dev dependency to exact version — `conftest.py` accesses `_TRACER_PROVIDER_SET_ONCE._done` directly; a patch release could rename this attribute
