@@ -40,7 +40,7 @@ Lower-priority items:
 
 ## v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)
 
-> Ecosystem packages pin `openframe-core>=3.0,<4`.
+> Ecosystem packages pinned `openframe-core>=3.0,<4`; `openframe-adapters` has migrated its imports to `openframe.core.ports`.
 
 - `openframe.core.contracts` renamed to `openframe.core.ports`. All names previously importable from `openframe.core.contracts` are now importable from `openframe.core.ports`. No compatibility shim — update all imports.
 - `openframe.core.ports` now exports both the port primitives (`BasePort`, `Capability`, `Identity`, `Lifecycle`, `PluginStatus`, `PluginHealth`, `PluginContext`, `PrincipalContext`, `TenantContext`) and the outbound protocols (`BaseRepository`, `BaseProducer`, `BaseConsumer`) from a single unified module.
@@ -50,7 +50,7 @@ Lower-priority items:
 
 ## v3.0.0 — Unified Port + Lifecycle Contract (breaking)
 
-> Full migration guide: [ADR-006](../architecture/adrs/adr-006-unified-port-lifecycle.md). Ecosystem packages pin `openframe-core>=3.0,<4`.
+> Migration guide: [ADR-006](../architecture/adrs/adr-006-unified-port-lifecycle.md). Ecosystem packages pinned `openframe-core>=3.0,<4`; all packages have since migrated.
 
 **Removed:**
 

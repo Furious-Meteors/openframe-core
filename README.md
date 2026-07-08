@@ -22,9 +22,6 @@
 `openframe-core` is the foundation package of the OpenFrame Microservice Development Suite. It defines the structural contracts, telemetry primitives, and shared utilities that every other package in the ecosystem depends on.
 
 Every package in the OpenFrame ecosystem pins `openframe-core>=3.0,<4`. The major version is the stability contract for the entire ecosystem.
-
-> **v3.0.0 is a breaking redesign.** The old hardcoded, lifecycle-free ports, the standalone `HealthCheck` protocol, and the separate `OpenFramePlugin` protocol are gone. They are replaced by a single unified contract layer built on `BasePort` (`Identity` + `Lifecycle`), and the error hierarchy is consolidated under a single `OpenFrameError` root. **v3.1.0 merges `openframe.core.contracts` into `openframe.core.ports`, and moves `BaseRepository`/`BaseProducer`/`BaseConsumer` into an internal `ports/outbound/` sub-module** (mirroring `openframe.core.inbound`) — no compatibility shim at the old path, and no change to the public `from openframe.core.ports import ...` surface. See [ADR-006](https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-006-unified-port-lifecycle/) and the [Changelog](.github/CHANGELOG.md) for the full migration guide.
-
 ---
 
 ## What's inside

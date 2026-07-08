@@ -2,7 +2,7 @@
 
 The foundation package of the OpenFrame Microservice Development Suite — the unified port + lifecycle contract layer, structured exceptions, telemetry, and ASGI middleware for any hexagonal architecture Python service. Every ecosystem package pins `openframe-core>=3.0,<4`.
 
-> **v3.0.0 is a breaking redesign.** The old lifecycle-free ports, standalone `HealthCheck`, and separate `OpenFramePlugin` protocol are replaced by a single unified contract layer (`BasePort` = `Identity` + `Lifecycle`). The error hierarchy is consolidated under `OpenFrameError`. **v3.1.0 merges `openframe.core.contracts` into `openframe.core.ports`** and moves the outbound protocols into an internal `ports/outbound/` sub-module — no compatibility shim, no public API change. See [ADR-006](technical/architecture/adrs/adr-006-unified-port-lifecycle.md) for the full rationale.
+`openframe-core` is built around a single unified contract layer: `BasePort` (`Identity` + `Lifecycle`) is the one base every outbound port and every registrable plugin extends — there is no separate health protocol and no separate plugin protocol. The error hierarchy is consolidated under a single `OpenFrameError` root. The full contract layer, including the capability-specific outbound protocols (`BaseRepository`, `BaseProducer`, `BaseConsumer`), lives in `openframe.core.ports`. See [ADR-006](technical/architecture/adrs/adr-006-unified-port-lifecycle.md) for the full design rationale.
 
 ---
 

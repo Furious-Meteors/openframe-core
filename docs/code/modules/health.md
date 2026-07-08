@@ -1,14 +1,10 @@
-# health — removed in v3.0.0
+# Health
 
-!!! warning "Module removed"
-    The `openframe.core.health` module and `HealthCheck` protocol (`ping()`/`is_ready()`) were **removed in v3.0.0**. There is no replacement shim or deprecated alias.
-
-Health is now part of the unified `Lifecycle` contract in `openframe.core.ports`:
+Health is part of the unified `Lifecycle` contract in `openframe.core.ports`. Every `BasePort` implements a single `health()` method that returns a rich `PluginHealth` snapshot — there is no separate health protocol.
 
 ```python
 from openframe.core.ports import Lifecycle, PluginHealth, PluginStatus
 
-# Instead of ping() / is_ready(), implement:
 async def health(self) -> PluginHealth:
     try:
         await self._pool.fetchval("SELECT 1")
@@ -20,22 +16,31 @@ async def health(self) -> PluginHealth:
         )
 ```
 
-`Lifecycle.health()` absorbs both `ping()` (cheap liveness) and `is_ready()` (full readiness) into one call returning a rich `PluginHealth` snapshot. Liveness vs. readiness granularity is expressed in `PluginStatus` and `PluginHealth.details`, not in separate methods.
+`Lifecycle.health()` is the single canonical health primitive. Liveness vs. readiness granularity — or any other reporting distinction an adapter needs — is expressed through `PluginStatus` and `PluginHealth.details`, not through separate methods:
 
----
+```python
+# Minimal
+PluginHealth(status=PluginStatus.READY)
 
-## Migration
+# With detail
+PluginHealth(
+    status=PluginStatus.READY,
+    details={"ping_ms": 2.1, "schema_ok": True},
+)
 
-| v2 | v3 |
-|---|---|
-| `from openframe.core.health import HealthCheck` | `from openframe.core.ports import Lifecycle, PluginHealth, PluginStatus` |
-| `async def ping(self) -> bool` | `async def health(self) -> PluginHealth` |
-| `async def is_ready(self) -> bool` | `async def health(self) -> PluginHealth` |
-| `isinstance(obj, HealthCheck)` | `isinstance(obj, Lifecycle)` |
+# Degraded
+PluginHealth(
+    status=PluginStatus.DEGRADED,
+    message="replica lag 5s",
+    details={"lag_s": 5},
+)
+```
+
+`PluginRegistry` calls `health()` on every registered port to build a live snapshot — see [`PluginRegistry.health_all()`](plugins.md).
 
 ---
 
 ## See Also
 
 - [ports module](ports.md) — `Lifecycle`, `PluginHealth`, `PluginStatus`, `BasePort`
-- [ADR-006](../../technical/architecture/adrs/adr-006-unified-port-lifecycle.md) — full rationale for the removal
+- [ADR-006](../../technical/architecture/adrs/adr-006-unified-port-lifecycle.md) — full design rationale
