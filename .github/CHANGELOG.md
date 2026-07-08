@@ -58,6 +58,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v3.2.1
+
+### Added
+
+- `openframe.core.schemas` — new experimental module providing
+  the `@contract(name, version)` decorator, `ContractMeta` dataclass,
+  and `get_contract_meta()` helper. Marks Pydantic models as
+  published cross-service contracts. The schema export, registry,
+  breaking-change diff, and codegen machinery lives in the
+  separate `openframe-schemas` package (openframe-tooling repo).
+
+---
+
 ## v3.2.0
 
 ### Added
