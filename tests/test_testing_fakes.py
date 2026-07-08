@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import pytest
 
-from openframe.core.contracts import Capability, PluginStatus
+from openframe.core.ports import Capability, PluginStatus
 from openframe.core.exceptions import AdapterQueryError
 from openframe.core.testing import (
     ConsumerContractTests,
@@ -140,7 +140,7 @@ async def test_in_memory_repository_health_reports_registered_before_initialize(
 
 async def test_in_memory_repository_health_reports_ready_after_initialize() -> None:
     """health() reports PluginStatus.READY after initialize() is called."""
-    from openframe.core.contracts import PluginContext
+    from openframe.core.ports import PluginContext
 
     repo: InMemoryRepository[dict] = InMemoryRepository()
     await repo.initialize(PluginContext(config={}, plugin_name=repo.name))

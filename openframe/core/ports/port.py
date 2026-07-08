@@ -1,10 +1,10 @@
 """
-openframe/core/contracts/port.py
+openframe/core/ports/port.py
 ===================================
 BasePort — the single unified outbound contract (ADR-006).
 
-``BasePort`` combines :class:`~openframe.core.contracts.identity.Identity`
-and :class:`~openframe.core.contracts.lifecycle.Lifecycle`. It is the one
+``BasePort`` combines :class:`~openframe.core.ports.identity.Identity`
+and :class:`~openframe.core.ports.lifecycle.Lifecycle`. It is the one
 base every outbound port in ``openframe.core.ports`` extends, and the one
 type the plugin registry accepts — there is no separate "plugin" protocol.
 A plugin *is* a registered ``BasePort``.
@@ -17,16 +17,16 @@ Runtime isinstance check::
                                          # like BaseRepository[T] are.
 
 Dependency order:
-    contracts/identity  → contracts/capability
-    contracts/lifecycle → contracts/health → contracts/context
-    contracts/port      → contracts/identity + contracts/lifecycle
+    ports/identity  → ports/capability
+    ports/lifecycle → ports/health → ports/context
+    ports/port      → ports/identity + ports/lifecycle
 """
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from openframe.core.contracts.identity import Identity
-from openframe.core.contracts.lifecycle import Lifecycle
+from openframe.core.ports.identity import Identity
+from openframe.core.ports.lifecycle import Lifecycle
 
 __all__ = ["BasePort"]
 

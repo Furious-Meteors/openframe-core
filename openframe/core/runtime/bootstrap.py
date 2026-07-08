@@ -27,15 +27,15 @@ All symbols are **experimental** in v3.0.
    Experimental — API may change or be removed in any version.
 
 Dependency order:
-    contracts         → (apex)
-    plugins/registry  → contracts + errors/plugin
-    runtime/bootstrap → plugins/registry + contracts
+    ports             → (apex)
+    plugins/registry  → ports + errors/plugin
+    runtime/bootstrap → plugins/registry + ports
 """
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from openframe.core.contracts import BasePort, Capability, PluginHealth
+from openframe.core.ports import BasePort, Capability, PluginHealth
 from openframe.core.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -110,9 +110,9 @@ class ApplicationBootstrap:
 
         Args:
             plugin: Port instance satisfying
-                    :class:`~openframe.core.contracts.port.BasePort`.
+                    :class:`~openframe.core.ports.port.BasePort`.
             config: This port's validated configuration, threaded through
-                    to its :class:`~openframe.core.contracts.health.PluginContext`
+                    to its :class:`~openframe.core.ports.health.PluginContext`
                     at initialization time.
 
         Raises:
@@ -131,7 +131,7 @@ class ApplicationBootstrap:
 
         Args:
             capability: Logical role from the
-                        :class:`~openframe.core.contracts.capability.Capability`
+                        :class:`~openframe.core.ports.capability.Capability`
                         taxonomy.
 
         Returns:

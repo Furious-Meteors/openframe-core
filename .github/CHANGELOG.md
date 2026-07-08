@@ -18,12 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as the default starting point and frame the other two as explicit alternatives
   with stated conditions. Tracked in the roadmap.
 
-- **`contracts/` five-module depth** — the `capability → context → health →
-  identity → lifecycle → port` chain is clean today. The risk is a sixth or
-  seventh module that doesn't stay within the single-concept-per-file rule or
-  that imports from non-adjacent layers. Consolidate before expanding if either
-  signal appears.
-
 ### Added
 
 - **`openframe.core.telemetry.shutdown_telemetry()`** — flushes and shuts
@@ -61,6 +55,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   attestation generation — the flag must be set explicitly to suppress the
   spurious "attestations input ignored" warning. Remove this flag (or set
   `attestations: true`) once Trusted Publishing (OIDC) is configured on PyPI.
+
+---
+
+## v3.1.0
+
+### Breaking changes
+
+#### openframe.core.contracts → openframe.core.ports
+
+The openframe.core.contracts module has been merged into
+openframe.core.ports and no longer exists. All names previously
+importable from openframe.core.contracts are now importable from
+openframe.core.ports:
+
+```python
+# Before (< v3.1.0)
+from openframe.core.contracts import BasePort, Capability, PluginHealth
+
+# After (v3.1.0+)
+from openframe.core.ports import BasePort, Capability, PluginHealth
+```
+
+No compatibility shim is provided at the old path.
+
+`openframe.core.ports` now exports both the port primitives
+(BasePort, Capability, Identity, Lifecycle, PluginStatus,
+PluginHealth, PluginContext, PrincipalContext, TenantContext)
+and the outbound protocols (BaseRepository, BaseProducer,
+BaseConsumer) from a single unified module.
+
+#### BaseRepository, BaseProducer, BaseConsumer moved to ports/outbound/
+
+The three capability-specific outbound port protocols have moved
+into the ports/outbound/ sub-module to mirror the existing
+inbound/ sub-module on the driven side of the hexagon.
+The public API is unchanged — import from openframe.core.ports
+as before:
+
+```python
+from openframe.core.ports import BaseRepository  # unchanged
+```
+
+The explicit sub-module path is now:
+
+```python
+from openframe.core.ports.outbound import BaseRepository
+```
+
+Future outbound capability protocols (BaseSecretsProvider,
+BaseObjectStore, BaseFeatureFlagProvider from openframe-infra)
+will be added to openframe/core/ports/outbound/ as the
+ecosystem grows.
 
 ---
 

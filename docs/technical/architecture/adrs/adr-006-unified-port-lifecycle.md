@@ -19,7 +19,7 @@ The driving side of the hexagon (use cases, command/query handlers invoked by in
 
 ## Decision
 
-Replace all three contract families with **one unified contract layer**, `openframe/core/contracts/`, built from two small, composable primitives:
+Replace all three contract families with **one unified contract layer**, `openframe/core/contracts/` (merged into `openframe/core/ports/` in v3.1.0 — see the addendum below), built from two small, composable primitives:
 
 - **`Identity`** — `name: str`, `version: str`, `capability: Capability`. What a thing *is*.
 - **`Lifecycle`** — `async initialize(context: PluginContext) -> None`, `async shutdown() -> None`, `async health() -> PluginHealth`. How a thing is *managed*. `health()` is the single, canonical health primitive — it absorbs the old `HealthCheck.ping()` (cheap liveness) and `HealthCheck.is_ready()` (full readiness) into one call that returns a rich `PluginHealth` snapshot (`PluginStatus` + message + details) instead of two independent bare `bool`s. An adapter that wants to distinguish liveness from readiness encodes that distinction in `PluginStatus` and `PluginHealth.details`, not in a second method.
@@ -106,3 +106,85 @@ conceptually siblings.
 - `to_dict()`/`from_dict()` serialisation for cross-service propagation. The
   fields are laid out to be serialisation-ready; the methods are added when the
   `protocol`/`client` packages need them (a non-breaking addition).
+
+---
+
+## Addendum — contracts/ merged into ports/, outbound/ sub-module introduced (v3.1.0)
+
+### Context
+
+`openframe.core.contracts` (the port/lifecycle primitives: `Identity`,
+`Lifecycle`, `BasePort`, `Capability`, `PluginStatus`/`PluginHealth`/
+`PluginContext`, `PrincipalContext`/`TenantContext`) and
+`openframe.core.ports` (the outbound protocols: `BaseRepository`,
+`BaseProducer`, `BaseConsumer`) were two directories for what this ADR
+already establishes as one concept — the port contract layer of the
+hexagonal architecture. Every outbound protocol extends `BasePort`
+directly; keeping the primitives and the protocols that compose them in
+two separate top-level modules was an arbitrary split, not a meaningful
+boundary.
+
+Separately, `BaseRepository`/`BaseProducer`/`BaseConsumer` are
+capability-specific outbound port protocols — what you get when the
+`BasePort` primitives are applied to one outbound capability. They are
+not implementations (those live in `openframe-adapters`), and sitting
+as three loose files directly inside `ports/` gave them no distinct
+identity from the primitive modules they are built on, and no clear
+intake point for future capability-specific protocols
+(`BaseSecretsProvider`, `BaseObjectStore`, `BaseFeatureFlagProvider`
+from `openframe-infra`).
+
+### Decision
+
+- **Merge `contracts/` into `ports/`.** All six primitive modules
+  (`capability.py`, `context.py`, `health.py`, `identity.py`,
+  `lifecycle.py`, `port.py`) move into `openframe/core/ports/`. A single
+  `ports/__init__.py` exports everything previously split across the two
+  `__init__.py` files.
+- **Introduce `ports/outbound/`.** The three existing outbound protocol
+  modules (`repository.py`, `producer.py`, `consumer.py`) move into a new
+  `openframe/core/ports/outbound/` sub-package, mirroring the existing
+  `openframe/core/inbound/` on the driving side of the hexagon. The name
+  `outbound/` (not `protocols/`, not `implementations/`) matches the
+  hexagonal vocabulary already in use, gives a clear intake rule for
+  future capability-specific outbound protocols, and is honest about
+  what these are — port contracts, not implementations.
+- **No compatibility shim.** Consistent with this ADR's "one contract
+  family, one canonical home per concept" principle (see "Alternatives
+  considered" above), `openframe/core/contracts/` is deleted outright —
+  no re-export module is left at the old path.
+- **No class is renamed and no method signature changes.** This is a
+  pure structural rename and merge; every name importable from
+  `openframe.core.contracts` before v3.1.0 is importable from
+  `openframe.core.ports` after it. `BaseRepository`, `BaseProducer`, and
+  `BaseConsumer` remain importable from the top-level
+  `openframe.core.ports` package — the `outbound/` sub-module is an
+  internal reorganisation, not a public API change.
+
+### Consequences
+
+- **Dependency DAG simplifies.** `ports` is now the single apex module
+  (after `exceptions → config`) that `inbound` and `plugins` depend on
+  directly, rather than both depending on a separate `contracts` module
+  that `ports` also depended on. Within `ports/`, the six primitive
+  modules form one linear chain and the three `ports/outbound/` modules
+  each depend only on `ports/port` — a clean two-tier structure, not a
+  new cycle.
+- **`ports/outbound/` has a stated intake rule.** Any future
+  capability-specific outbound port protocol belongs in
+  `ports/outbound/`, re-exported from `ports/__init__.py` — not as a
+  new top-level `ports/` module, and not defined inside the downstream
+  package that first needs it. See
+  [capability-taxonomy.md](../capability-taxonomy.md#where-capability-specific-outbound-port-protocols-live).
+- **Shipped as a minor version, not a major one.** Version bumps
+  `3.0.1` → `3.1.0` in `pyproject.toml` — this is judged a structural
+  reorganisation of the v3.0.0 contract layer rather than a further
+  architectural change, so it does not warrant its own major version.
+  Unlike the v3.0.0 break, `openframe-adapters` and other ecosystem
+  packages pinned `openframe-core>=3.0,<4` **will** auto-resolve to
+  3.1.0 on their next install. Because there is still no compatibility
+  shim at the old `openframe.core.contracts` path, any package importing
+  from it will fail immediately on upgrade — downstream packages still
+  importing `openframe.core.contracts` must migrate to
+  `openframe.core.ports` before taking a `openframe-core` upgrade past
+  3.1.0, even though semver alone would not have warned them.

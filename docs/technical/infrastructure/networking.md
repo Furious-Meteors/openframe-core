@@ -17,4 +17,4 @@ When `OTEL_EXPORTER_OTLP_ENDPOINT` is absent, no-op providers are installed and 
 
 ## Adapter Networking
 
-Adapter packages (`openframe-adapters-*`) manage their own connections. `openframe-core` provides the `Lifecycle` contract in `contracts/` — specifically `Lifecycle.health() -> PluginHealth` — that adapters implement for connection verification. `PluginRegistry` calls `health()` during and after `initialize_all()`. `openframe-core` does not own any connection lifecycle itself.
+Adapter packages (`openframe-adapters-*`) manage their own connections. `openframe-core` provides the `Lifecycle` contract in `ports/` — specifically `Lifecycle.health() -> PluginHealth` — that adapters implement for connection verification. `PluginRegistry` calls `health()` during and after `initialize_all()`. `openframe-core` does not own any connection lifecycle itself.

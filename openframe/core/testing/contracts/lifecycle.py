@@ -2,7 +2,7 @@
 openframe/core/testing/contracts/lifecycle.py
 ================================================
 LifecycleContractTests — reusable pytest base class for
-:class:`~openframe.core.contracts.lifecycle.Lifecycle` conformance
+:class:`~openframe.core.ports.lifecycle.Lifecycle` conformance
 (ADR-006).
 
 Every port implementation exercises the same lifecycle sequence:
@@ -27,7 +27,7 @@ installed.
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/contracts/lifecycle → contracts
+    testing/contracts/lifecycle → ports
 
 Subclass usage::
 
@@ -44,18 +44,18 @@ __all__ = ["LifecycleContractTests"]
 class LifecycleContractTests:
     """
     Reusable pytest base class for
-    :class:`~openframe.core.contracts.lifecycle.Lifecycle` contract tests.
+    :class:`~openframe.core.ports.lifecycle.Lifecycle` contract tests.
 
     Subclasses must provide one pytest fixture:
 
     ``port``
         A fresh, un-initialized object satisfying
-        :class:`~openframe.core.contracts.lifecycle.Lifecycle` (and
-        typically :class:`~openframe.core.contracts.port.BasePort` as a
+        :class:`~openframe.core.ports.lifecycle.Lifecycle` (and
+        typically :class:`~openframe.core.ports.port.BasePort` as a
         whole — see :class:`~openframe.core.testing.contracts.port.PortContractTests`).
 
     Subclasses may optionally override the ``plugin_context`` fixture to
-    supply a custom :class:`~openframe.core.contracts.health.PluginContext`;
+    supply a custom :class:`~openframe.core.ports.health.PluginContext`;
     the default is an empty config keyed by the port's own name.
 
     .. stability: beta
@@ -68,7 +68,7 @@ class LifecycleContractTests:
         it can be imported without pytest installed) — a plain helper
         method any test method can call directly.
         """
-        from openframe.core.contracts import PluginContext
+        from openframe.core.ports import PluginContext
 
         return PluginContext(config={}, plugin_name=getattr(port, "name", "contract-test"))
 
@@ -78,7 +78,7 @@ class LifecycleContractTests:
 
     async def test_health_after_initialize_returns_plugin_health(self, port) -> None:
         """health() returns a PluginHealth instance after initialize()."""
-        from openframe.core.contracts import PluginHealth
+        from openframe.core.ports import PluginHealth
 
         await port.initialize(self._make_context(port))
         result = await port.health()

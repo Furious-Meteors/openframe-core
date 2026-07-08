@@ -2,7 +2,7 @@
 openframe/core/testing/contracts/port.py
 ===========================================
 PortContractTests — reusable pytest base class for
-:class:`~openframe.core.contracts.port.BasePort` conformance (ADR-006).
+:class:`~openframe.core.ports.port.BasePort` conformance (ADR-006).
 
 Combines identity checks (``name``/``version``/``capability`` present and
 correctly typed) with the full
@@ -18,8 +18,8 @@ installed.
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/contracts/lifecycle → contracts
-    testing/contracts/port      → testing/contracts/lifecycle + contracts
+    testing/contracts/lifecycle → ports
+    testing/contracts/port      → testing/contracts/lifecycle + ports
 
 Subclass usage::
 
@@ -43,7 +43,7 @@ class PortContractTests(LifecycleContractTests):
 
     ``port``
         A fresh instance to test. Must satisfy
-        :class:`~openframe.core.contracts.port.BasePort`.
+        :class:`~openframe.core.ports.port.BasePort`.
 
     Adds identity-shape checks on top of the inherited
     :class:`~openframe.core.testing.contracts.lifecycle.LifecycleContractTests`
@@ -55,7 +55,7 @@ class PortContractTests(LifecycleContractTests):
 
     async def test_satisfies_base_port_protocol(self, port) -> None:
         """Port satisfies BasePort via structural subtyping."""
-        from openframe.core.contracts import BasePort
+        from openframe.core.ports import BasePort
 
         assert isinstance(port, BasePort), (
             f"{type(port).__name__} does not satisfy BasePort. Ensure it "
@@ -77,7 +77,7 @@ class PortContractTests(LifecycleContractTests):
 
     async def test_identity_capability_is_capability_enum(self, port) -> None:
         """port.capability is a member of the Capability enum."""
-        from openframe.core.contracts import Capability
+        from openframe.core.ports import Capability
 
         assert isinstance(port.capability, Capability), (
             f"{type(port).__name__}.capability must be a Capability enum "

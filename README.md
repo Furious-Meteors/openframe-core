@@ -23,7 +23,7 @@
 
 Every package in the OpenFrame ecosystem pins `openframe-core>=3.0,<4`. The major version is the stability contract for the entire ecosystem.
 
-> **v3.0.0 is a breaking redesign.** The old hardcoded, lifecycle-free ports, the standalone `HealthCheck` protocol, and the separate `OpenFramePlugin` protocol are gone. They are replaced by a single unified contract layer built on `BasePort` (`Identity` + `Lifecycle`), and the error hierarchy is consolidated under a single `OpenFrameError` root. See [ADR-006](https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-006-unified-port-lifecycle/) and the [Changelog](.github/CHANGELOG.md) for the full migration guide.
+> **v3.0.0 is a breaking redesign.** The old hardcoded, lifecycle-free ports, the standalone `HealthCheck` protocol, and the separate `OpenFramePlugin` protocol are gone. They are replaced by a single unified contract layer built on `BasePort` (`Identity` + `Lifecycle`), and the error hierarchy is consolidated under a single `OpenFrameError` root. **v3.1.0 merges `openframe.core.contracts` into `openframe.core.ports`, and moves `BaseRepository`/`BaseProducer`/`BaseConsumer` into an internal `ports/outbound/` sub-module** (mirroring `openframe.core.inbound`) — no compatibility shim at the old path, and no change to the public `from openframe.core.ports import ...` surface. See [ADR-006](https://furious-meteors.github.io/openframe-core/technical/architecture/adrs/adr-006-unified-port-lifecycle/) and the [Changelog](.github/CHANGELOG.md) for the full migration guide.
 
 ---
 
@@ -31,10 +31,9 @@ Every package in the OpenFrame ecosystem pins `openframe-core>=3.0,<4`. The majo
 
 | Module | Exports |
 |---|---|
-| `openframe.core.contracts` | `BasePort` · `Identity` · `Lifecycle` · `Capability` · `PluginStatus` · `PluginHealth` · `PluginContext` · `PrincipalContext` · `TenantContext` |
+| `openframe.core.ports` | `BasePort` · `Identity` · `Lifecycle` · `Capability` · `PluginStatus` · `PluginHealth` · `PluginContext` · `PrincipalContext` · `TenantContext` · `BaseRepository[T]` · `BaseProducer[T]` · `BaseConsumer[T]` |
 | `openframe.core.exceptions` | `OpenFrameError` (root) · `ErrorCode` · `Severity` · `AdapterError` (+5) · `PluginError` (+4, incl. `AmbiguousCapabilityError`) |
 | `openframe.core.config` | `BaseAdapterSettings` — Pydantic `BaseSettings` subclass all adapters inherit |
-| `openframe.core.ports` | `BaseRepository[T]` · `BaseProducer[T]` · `BaseConsumer[T]` — `BasePort` + domain methods (outbound side) |
 | `openframe.core.inbound` | `UseCase[TIn, TOut]` · `CommandHandler[TIn]` · `QueryHandler[TIn, TOut]` · `RequestContext` (driving side) |
 | `openframe.core.plugins` | `PluginRegistry` — explicit registration, ordered init, LIFO shutdown, capability lookup |
 | `openframe.core.runtime` | `ApplicationBootstrap` — optional composition-root base class |
@@ -113,8 +112,7 @@ settings = PostgresSettings()
 Every port is a `BasePort`: `Identity` (`name`/`version`/`capability`) + `Lifecycle` (`initialize`/`shutdown`/`health`) plus its own domain methods. Adapters satisfy it structurally — no inheritance required.
 
 ```python
-from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
-from openframe.core.ports import BaseRepository
+from openframe.core.ports import Capability, PluginContext, PluginHealth, PluginStatus, BaseRepository
 
 class PostgresItemRepository:
     # Identity
@@ -144,7 +142,7 @@ assert isinstance(PostgresItemRepository(), BaseRepository)   # True
 A "plugin" is just a registered `BasePort`. The registry initializes in order, shuts down LIFO, and looks up by the typed `Capability` enum:
 
 ```python
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 from openframe.core.plugins import PluginRegistry
 
 registry = PluginRegistry()
@@ -162,7 +160,7 @@ await registry.shutdown_all()                 # reverse order; never raises
 ### Runtime — optional composition root
 
 ```python
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 from openframe.core.runtime import ApplicationBootstrap
 
 class MyServiceBootstrap(ApplicationBootstrap):
@@ -300,11 +298,11 @@ pip install -e ".[dev]"
 pytest tests/ -v
 ```
 
-284 tests. All run in under 1 second — no network calls, no external services.
+301 tests. All run in under 1 second — no network calls, no external services.
 
 ```bash
 # Smoke test
-python -c "from openframe.core.contracts import BasePort; print('openframe-core OK')"
+python -c "from openframe.core.ports import BasePort; print('openframe-core OK')"
 ```
 
 ---

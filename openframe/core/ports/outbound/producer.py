@@ -1,10 +1,10 @@
 """
-openframe/core/ports/producer.py
-===================================
+openframe/core/ports/outbound/producer.py
+============================================
 Generic message producer port for the OpenFrame ecosystem (ADR-006).
 
 ``BaseProducer[T]`` extends
-:class:`~openframe.core.contracts.port.BasePort` directly — it is
+:class:`~openframe.core.ports.port.BasePort` directly — it is
 ``Identity + Lifecycle`` plus its own domain methods. There is exactly one
 lifecycle-aware definition of this port.
 
@@ -17,14 +17,14 @@ Runtime isinstance check::
     isinstance(producer, BaseProducer[str])  # ✗ raises TypeError
 
 Dependency order:
-    contracts/port  → contracts/identity + contracts/lifecycle
-    ports/producer  → contracts/port
+    ports/port              → ports/identity + ports/lifecycle
+    ports/outbound/producer → ports/port
 """
 from __future__ import annotations
 
 from typing import Protocol, TypeVar, runtime_checkable
 
-from openframe.core.contracts.port import BasePort
+from openframe.core.ports.port import BasePort
 
 __all__ = ["BaseProducer"]
 

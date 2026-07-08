@@ -11,7 +11,7 @@ Business logic lives in the centre. Infrastructure lives on the outside. The cen
 ```mermaid
 flowchart TD
     CORE["core/\nbusiness logic\nno infrastructure imports"]
-    ADAPTER["adapters/\nPostgres · Redis · Kafka\nImplement BasePort from contracts/"]
+    ADAPTER["adapters/\nPostgres · Redis · Kafka\nImplement BasePort from ports/"]
     REGISTRY["PluginRegistry\nmanaged lifecycle + capability lookup"]
     ROUTES["api/ or entry/\nHTTP routes · message handlers\ncalls UseCases, not adapters directly"]
 
@@ -29,12 +29,12 @@ flowchart TD
 
 ## Two Sides of the Hexagon
 
-`openframe-core` v3 models both sides of the hexagon explicitly:
+`openframe-core` models both sides of the hexagon explicitly:
 
-- **Outbound (driven) side** — `ports/`: `BaseRepository`, `BaseProducer`, `BaseConsumer`. These are what business logic calls to reach the outside world.
+- **Outbound (driven) side** — `ports/outbound/`: `BaseRepository`, `BaseProducer`, `BaseConsumer`. These are what business logic calls to reach the outside world.
 - **Inbound (driving) side** — `inbound/`: `UseCase`, `CommandHandler`, `QueryHandler`. These are what inbound adapters (HTTP routes, message handlers, CLI commands) call into business logic.
 
-Both sides are built on `contracts/` — the apex module that defines `BasePort`, `Identity`, `Lifecycle`, and `Capability`.
+Both sides are built on `ports/` — the apex module that defines `BasePort`, `Identity`, `Lifecycle`, and `Capability` (the outbound protocols above are internally organised in its `outbound/` sub-module, but always imported from the top-level `openframe.core.ports` package).
 
 ---
 
@@ -42,10 +42,10 @@ Both sides are built on `contracts/` — the apex module that defines `BasePort`
 
 A port is a Python `Protocol` — a structural interface. `BaseRepository[T]` says: "whatever object I call `get(entity_id)` on must return `T | None`." It does not say anything about Postgres, MongoDB, or an in-memory dict.
 
-Every port in v3 is also a `BasePort` — it has `name`, `version`, `capability`, `initialize`, `shutdown`, and `health`. An adapter that implements `BaseRepository` is automatically lifecycle-aware and registry-registrable with no extra wrapper code.
+Every port is also a `BasePort` — it has `name`, `version`, `capability`, `initialize`, `shutdown`, and `health`. An adapter that implements `BaseRepository` is automatically lifecycle-aware and registry-registrable with no extra wrapper code.
 
 ```python
-# contracts/ defines BasePort; ports/ adds domain methods
+# ports/ defines BasePort; ports/outbound/ adds domain methods
 class BaseRepository(BasePort, Protocol[T]):
     async def get(self, entity_id: str) -> T | None: ...
     # ... + name, version, capability, initialize, shutdown, health from BasePort

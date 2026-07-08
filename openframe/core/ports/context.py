@@ -1,20 +1,20 @@
 """
-openframe/core/contracts/context.py
-======================================
+openframe/core/ports/context.py
+==================================
 Principal and tenant identity primitives (ADR-006).
 
 Frozen dataclasses threaded through both sides of the hexagon:
 
-- Outbound: :class:`~openframe.core.contracts.health.PluginContext` carries
+- Outbound: :class:`~openframe.core.ports.health.PluginContext` carries
   an optional ``principal``/``tenant`` into
-  :meth:`~openframe.core.contracts.lifecycle.Lifecycle.initialize`.
+  :meth:`~openframe.core.ports.lifecycle.Lifecycle.initialize`.
 - Inbound: ``openframe.core.inbound.context.RequestContext`` carries the
   same two types, constructed by inbound adapters (HTTP middleware,
   message-handler entrypoints) and passed into a use case's ``execute()``.
 
 Keeping these two dataclasses free of any other openframe import means
-both the outbound (`contracts` → `ports`) and inbound (`contracts` →
-`inbound`) sides can depend on them without a cycle.
+both the outbound (``ports``) and inbound (``inbound``) sides can depend
+on them without a cycle.
 
 Dependency order: this module imports only from Python stdlib.
 No openframe.core imports.

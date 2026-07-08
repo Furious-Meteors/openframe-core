@@ -10,7 +10,7 @@
 
 ```python
 from openframe.core.plugins import PluginRegistry
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 ```
 
 ---
@@ -119,7 +119,7 @@ Return all registered ports for the given `Capability`. Returns an empty list wh
 
 ```python
 from openframe.core.plugins import PluginRegistry
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 
 registry = PluginRegistry()
 
@@ -154,7 +154,7 @@ primary, replica = registry.get_all(Capability.PERSISTENCE)
 
 ```python
 from openframe.core.runtime import ApplicationBootstrap
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 
 class MyApp(ApplicationBootstrap):
     def configure(self) -> None:

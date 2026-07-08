@@ -38,20 +38,30 @@ Lower-priority items:
 
 ## Changelog
 
+## v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)
+
+> Ecosystem packages pin `openframe-core>=3.0,<4`.
+
+- `openframe.core.contracts` renamed to `openframe.core.ports`. All names previously importable from `openframe.core.contracts` are now importable from `openframe.core.ports`. No compatibility shim — update all imports.
+- `openframe.core.ports` now exports both the port primitives (`BasePort`, `Capability`, `Identity`, `Lifecycle`, `PluginStatus`, `PluginHealth`, `PluginContext`, `PrincipalContext`, `TenantContext`) and the outbound protocols (`BaseRepository`, `BaseProducer`, `BaseConsumer`) from a single unified module.
+- `BaseRepository`, `BaseProducer`, `BaseConsumer` moved into a new `openframe/core/ports/outbound/` sub-module, mirroring `openframe/core/inbound/` on the driving side of the hexagon. The public API is unchanged — `from openframe.core.ports import BaseRepository` still works; the explicit sub-module path is now `from openframe.core.ports.outbound import BaseRepository`. Future capability-specific outbound protocols (`BaseSecretsProvider`, `BaseObjectStore`, `BaseFeatureFlagProvider` from `openframe-infra`) will be added to `ports/outbound/`.
+
+---
+
 ## v3.0.0 — Unified Port + Lifecycle Contract (breaking)
 
 > Full migration guide: [ADR-006](../architecture/adrs/adr-006-unified-port-lifecycle.md). Ecosystem packages pin `openframe-core>=3.0,<4`.
 
 **Removed:**
 
-- `openframe.core.health` — `HealthCheck` Protocol (`ping()`/`is_ready()`) deleted. Health is now `Lifecycle.health() -> PluginHealth` in `openframe.core.contracts`.
+- `openframe.core.health` — `HealthCheck` Protocol (`ping()`/`is_ready()`) deleted. Health is now `Lifecycle.health() -> PluginHealth` in `openframe.core.ports`.
 - `openframe.core.plugins.contracts` / `OpenFramePlugin` — deleted. A plugin is now just a registered `BasePort`. No separate plugin protocol exists.
 - `openframe.core.errors` — the `PluginError` family moved into `openframe.core.exceptions` under the new `OpenFrameError` root. No deprecated aliases.
 - Pre-v3 lifecycle-free ports — `BaseRepository`, `BaseProducer`, `BaseConsumer` no longer exist as bare domain-method-only Protocols; rebuilt on `BasePort`.
 
 **Added:**
 
-- `openframe.core.contracts` — apex module: `Identity`, `Lifecycle`, `BasePort` (`@runtime_checkable`), `Capability` (closed `str` enum), `PluginStatus`, `PluginHealth`, `PluginContext`, `PrincipalContext`, `TenantContext`.
+- `openframe.core.contracts` *(merged into `openframe.core.ports` in v3.1.0 — see below)* — apex module: `Identity`, `Lifecycle`, `BasePort` (`@runtime_checkable`), `Capability` (closed `str` enum), `PluginStatus`, `PluginHealth`, `PluginContext`, `PrincipalContext`, `TenantContext`.
 - `openframe.core.inbound` — driving side of the hexagon: `UseCase[TIn, TOut]`, `CommandHandler[TIn]`, `QueryHandler[TIn, TOut]`, `RequestContext`.
 - `openframe.core.exceptions.OpenFrameError` — single root for all ecosystem exceptions. `ErrorCode` and `Severity` `StrEnum`s. `AdapterError` and `PluginError` families re-parented under it.
 - `openframe.core.telemetry.record_error()` — structured error→span recording seam. Called at `TracingProxy`, `TelemetryMiddleware`, and `PluginRegistry` boundary seams.

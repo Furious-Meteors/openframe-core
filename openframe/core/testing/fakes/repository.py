@@ -12,13 +12,13 @@ dependencies.
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/fakes/repository → contracts + ports + exceptions
+    testing/fakes/repository → ports + exceptions
 """
 from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
-from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
+from openframe.core.ports import Capability, PluginContext, PluginHealth, PluginStatus
 
 __all__ = ["InMemoryRepository"]
 
@@ -97,7 +97,7 @@ class InMemoryRepository(Generic[T]):
         Initialise an empty repository.
 
         Args:
-            name:       Identity name — see :class:`~openframe.core.contracts.identity.Identity`.
+            name:       Identity name — see :class:`~openframe.core.ports.identity.Identity`.
             version:    Identity version string.
             capability: Identity capability. Defaults to ``Capability.PERSISTENCE``.
             healthy:    When ``False``, :meth:`health` reports

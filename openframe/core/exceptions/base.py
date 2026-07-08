@@ -16,7 +16,7 @@ package's family) derives from ``OpenFrameError``, so a single
 Bottom of the dependency DAG
 ----------------------------
 This module imports only ``openframe.core.exceptions.codes`` and the stdlib.
-It never imports from any higher layer (config, contracts, telemetry, ...).
+It never imports from any higher layer (config, ports, telemetry, ...).
 Observability integration is done the other way round: the telemetry layer
 imports ``OpenFrameError`` and reads its plain data — the error never reaches
 up. See ``openframe.core.telemetry.record_error``.

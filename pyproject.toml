@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openframe-core"
-version = "3.0.1"
-description = "OpenFrame Microservice Suite - platform kernel. Contracts, testing utilities, plugin registry, and composition root."
+version = "3.1.0"
+description = "OpenFrame Microservice Suite - platform kernel. Port contracts, testing utilities, plugin registry, and composition root."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}

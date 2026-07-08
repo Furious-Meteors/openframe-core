@@ -1,5 +1,5 @@
 """
-openframe/core/contracts/health.py
+openframe/core/ports/health.py
 =====================================
 Canonical lifecycle status, health snapshot, and initialization context
 (ADR-006). This is the ONE home for ``PluginStatus``, ``PluginHealth``, and
@@ -7,8 +7,8 @@ Canonical lifecycle status, health snapshot, and initialization context
 (deleted) and are not duplicated anywhere else.
 
 Dependency order:
-    contracts/context → (no openframe imports)
-    contracts/health   → contracts/context
+    ports/context → (no openframe imports)
+    ports/health   → ports/context
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Mapping
 
-from openframe.core.contracts.context import PrincipalContext, TenantContext
+from openframe.core.ports.context import PrincipalContext, TenantContext
 
 __all__ = ["PluginStatus", "PluginHealth", "PluginContext"]
 
@@ -42,7 +42,7 @@ class PluginStatus(Enum):
 @dataclass(frozen=True)
 class PluginHealth:
     """
-    Health snapshot returned by :meth:`~openframe.core.contracts.lifecycle.Lifecycle.health`.
+    Health snapshot returned by :meth:`~openframe.core.ports.lifecycle.Lifecycle.health`.
 
     Frozen — instances are safe to cache and pass across coroutines.
 
@@ -67,7 +67,7 @@ class PluginHealth:
 @dataclass(frozen=True)
 class PluginContext:
     """
-    Context passed to :meth:`~openframe.core.contracts.lifecycle.Lifecycle.initialize`.
+    Context passed to :meth:`~openframe.core.ports.lifecycle.Lifecycle.initialize`.
 
     Intentionally narrow on cross-port dependencies — a port cannot look up
     other ports from this context. Cross-port dependencies must be resolved

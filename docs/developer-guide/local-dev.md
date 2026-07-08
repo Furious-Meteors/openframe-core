@@ -20,7 +20,7 @@ pip install -e ".[dev]"
 pytest tests/ -v
 ```
 
-284 tests. All pass with no external services. OTel tests use `InMemorySpanExporter` — no network calls.
+301 tests. All pass with no external services. OTel tests use `InMemorySpanExporter` — no network calls.
 
 ---
 

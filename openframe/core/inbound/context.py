@@ -2,7 +2,7 @@
 openframe/core/inbound/context.py
 ====================================
 RequestContext — the inbound-side counterpart to
-:class:`~openframe.core.contracts.health.PluginContext` (ADR-006).
+:class:`~openframe.core.ports.health.PluginContext` (ADR-006).
 
 Constructed by inbound adapters — HTTP middleware, message-handler
 entrypoints, CLI commands — and passed into a
@@ -13,14 +13,14 @@ outbound side, so a single request's identity threads consistently through
 both directions of the hexagon.
 
 Dependency order:
-    contracts/context → (no openframe imports)
-    inbound/context   → contracts/context
+    ports/context   → (no openframe imports)
+    inbound/context → ports/context
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from openframe.core.contracts.context import PrincipalContext, TenantContext
+from openframe.core.ports.context import PrincipalContext, TenantContext
 
 __all__ = ["RequestContext"]
 

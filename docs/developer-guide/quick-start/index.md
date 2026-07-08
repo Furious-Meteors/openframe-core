@@ -35,16 +35,16 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 
-from openframe.core.contracts import (
+from openframe.core.exceptions import AdapterNotFoundError
+from openframe.core.middleware import TelemetryMiddleware
+from openframe.core.plugins import PluginRegistry
+from openframe.core.ports import (
+    BaseRepository,
     Capability,
     PluginContext,
     PluginHealth,
     PluginStatus,
 )
-from openframe.core.exceptions import AdapterNotFoundError
-from openframe.core.middleware import TelemetryMiddleware
-from openframe.core.plugins import PluginRegistry
-from openframe.core.ports import BaseRepository
 from openframe.core.telemetry import record_lifecycle_event, setup_telemetry
 from openframe.core.tracing import TracingProxy
 

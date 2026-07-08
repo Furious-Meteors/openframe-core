@@ -23,8 +23,10 @@ pip install openframe-core
 
 ```bash
 python -c "
-from openframe.core.contracts import BasePort, Capability, PluginHealth, PluginStatus
-from openframe.core.ports import BaseRepository, BaseProducer, BaseConsumer
+from openframe.core.ports import (
+    BasePort, Capability, PluginHealth, PluginStatus,
+    BaseRepository, BaseProducer, BaseConsumer,
+)
 from openframe.core.exceptions import OpenFrameError, AdapterError
 from openframe.core.inbound import UseCase, RequestContext
 from openframe.core.plugins import PluginRegistry
@@ -67,7 +69,7 @@ export OPENFRAME_ENV="dev"
 ```python
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 from openframe.core.plugins import PluginRegistry
 from openframe.core.telemetry import setup_telemetry, record_lifecycle_event
 from openframe.core.middleware import TelemetryMiddleware

@@ -1,7 +1,8 @@
 """
 tests/test_ports.py
 =====================
-Tests for openframe.core.ports — BaseRepository, BaseProducer, BaseConsumer.
+Tests for openframe.core.ports.outbound — BaseRepository, BaseProducer,
+BaseConsumer, re-exported at the top of openframe.core.ports.
 
 Covers:
 - runtime_checkable isinstance checks (positive and negative)
@@ -16,8 +17,15 @@ from collections.abc import Awaitable, Callable
 
 import pytest
 
-from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
-from openframe.core.ports import BaseConsumer, BaseProducer, BaseRepository
+from openframe.core.ports import (
+    BaseConsumer,
+    BaseProducer,
+    BaseRepository,
+    Capability,
+    PluginContext,
+    PluginHealth,
+    PluginStatus,
+)
 
 
 # ---------------------------------------------------------------------------

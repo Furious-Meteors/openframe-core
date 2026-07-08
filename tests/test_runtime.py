@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from openframe.core.contracts import BasePort, Capability, PluginContext, PluginHealth, PluginStatus
+from openframe.core.ports import BasePort, Capability, PluginContext, PluginHealth, PluginStatus
 from openframe.core.runtime import ApplicationBootstrap
 
 

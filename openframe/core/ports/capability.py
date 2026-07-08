@@ -1,9 +1,9 @@
 """
-openframe/core/contracts/capability.py
+openframe/core/ports/capability.py
 ========================================
 Closed capability taxonomy for the OpenFrame plugin/port ecosystem.
 
-Every :class:`~openframe.core.contracts.identity.Identity` declares a
+Every :class:`~openframe.core.ports.identity.Identity` declares a
 ``capability`` — its logical role in the system (persistence, cache, queue,
 ...). Prior to v3.0 this was a raw ``str``; ADR-006 replaces it with a typed,
 closed ``Enum`` so capability lookups are checked statically and

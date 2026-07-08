@@ -184,7 +184,6 @@ nav:
       - Overview: code/modules/index.md
       - exceptions: code/modules/exceptions.md
       - config: code/modules/config.md
-      - contracts: code/modules/contracts.md
       - ports: code/modules/ports.md
       - inbound: code/modules/inbound.md
       - telemetry: code/modules/telemetry.md

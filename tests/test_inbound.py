@@ -10,7 +10,7 @@ import dataclasses
 
 import pytest
 
-from openframe.core.contracts import PrincipalContext, TenantContext
+from openframe.core.ports import PrincipalContext, TenantContext
 from openframe.core.inbound import CommandHandler, QueryHandler, RequestContext, UseCase
 
 

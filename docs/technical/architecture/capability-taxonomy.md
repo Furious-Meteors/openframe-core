@@ -1,11 +1,11 @@
 # Capability Taxonomy
 
-`openframe.core.contracts.Capability` is a closed `str` `Enum` — the
+`openframe.core.ports.Capability` is a closed `str` `Enum` — the
 typed vocabulary every `BasePort`'s `capability` attribute is drawn from,
 and the type `PluginRegistry.get()`/`get_all()` key their lookups on
 (ADR-006). This page is the human-readable reference derived from that
 enum; when the two disagree, the enum in
-[`openframe/core/contracts/capability.py`](https://github.com/Furious-Meteors/openframe-core/blob/production/openframe/core/contracts/capability.py)
+[`openframe/core/ports/capability.py`](https://github.com/Furious-Meteors/openframe-core/blob/production/openframe/core/ports/capability.py)
 is authoritative.
 
 ---
@@ -34,7 +34,7 @@ is authoritative.
 serialise cleanly to logs/JSON without an explicit `.value` access:
 
 ```python
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 
 assert Capability.PERSISTENCE == "persistence"
 ```
@@ -76,3 +76,19 @@ across the ecosystem. See
 [ADR-006](adrs/adr-006-unified-port-lifecycle.md#alternatives-considered)
 for why an open `str`/`NewType` taxonomy was rejected in favour of a
 closed enum.
+
+---
+
+## Where capability-specific outbound port protocols live
+
+Capability-specific outbound port protocols (`BaseRepository` for
+`PERSISTENCE`, `BaseProducer`/`BaseConsumer` for `QUEUE`) live in
+`openframe/core/ports/outbound/`, not in the adapter packages that
+implement them. A new `Capability` member (e.g. `SECRETS`, `FLAGS`,
+`STORAGE`) typically arrives together with a new base protocol in
+`ports/outbound/` — `BaseSecretsProvider`, `BaseFeatureFlagProvider`,
+`BaseObjectStore` — added to `openframe-core` by the package proposing
+the capability (e.g. `openframe-infra`), not defined ad hoc inside that
+package itself. Port *contracts* belong to `openframe-core`; only the
+concrete *implementations* live downstream in `openframe-adapters` /
+`openframe-infra`.
