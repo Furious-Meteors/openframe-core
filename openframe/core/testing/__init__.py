@@ -7,7 +7,7 @@ Provides in-memory test doubles (fakes) and reusable pytest base classes
 (contract tests) that every ``openframe-adapters-*`` package uses.
 
 Zero external dependencies — fakes import only from
-``openframe.core.contracts``, ``openframe.core.ports``, and
+``openframe.core.ports``, ``openframe.core.ports``, and
 ``openframe.core.exceptions``.  Contract test classes do not import pytest
 at the module level; they are only useful when pytest is installed.
 

@@ -29,7 +29,7 @@ print('connected')
 **2. Check `health()` directly via `PluginRegistry`.**
 
 ```python
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 import asyncio
 
 # If you have access to the registry instance:
@@ -74,7 +74,7 @@ git push origin production
 Check `port.health()` in the `lifespan` handler and refuse startup if it returns `PluginStatus.UNAVAILABLE`. A service that cannot reach its database should not start serving traffic.
 
 ```python
-from openframe.core.contracts import Capability, PluginStatus
+from openframe.core.ports import Capability, PluginStatus
 
 port = registry.get(Capability.PERSISTENCE)
 health = await port.health()

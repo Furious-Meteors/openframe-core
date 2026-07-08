@@ -20,7 +20,7 @@ Terms used throughout the OpenFrame documentation. Each term is defined precisel
 
 **BaseConsumer[T]** — the generic `runtime_checkable` Protocol for message queue consumer adapters. Extends `BasePort`. Methods: `subscribe`, `ack`, `nack`, `close` plus identity/lifecycle from `BasePort`.
 
-**BasePort** — the single unified base for every outbound port and every registrable plugin. Composes `Identity` (`name`/`version`/`capability`) and `Lifecycle` (`initialize`/`shutdown`/`health`). Defined in `openframe.core.contracts`.
+**BasePort** — the single unified base for every outbound port and every registrable plugin. Composes `Identity` (`name`/`version`/`capability`) and `Lifecycle` (`initialize`/`shutdown`/`health`). Defined in `openframe.core.ports`.
 
 **BaseProducer[T]** — the generic `runtime_checkable` Protocol for message queue producer adapters. Extends `BasePort`. Methods: `publish`, `publish_batch`, `close` plus identity/lifecycle from `BasePort`.
 
@@ -34,7 +34,7 @@ Terms used throughout the OpenFrame documentation. Each term is defined precisel
 
 ## D
 
-**Dependency order** — the rule inside `openframe-core` that modules may only import from modules lower in the DAG: `exceptions` → `config` → `contracts` → `ports` / `inbound` / `telemetry` → `tracing` → `middleware` → `plugins` → `runtime`. Circular imports are a build failure. There is no standalone `health` node — health is part of `contracts` (`Lifecycle.health()`).
+**Dependency order** — the rule inside `openframe-core` that modules may only import from modules lower in the DAG: `exceptions` → `config` → `ports` → `inbound` / `telemetry` → `tracing` → `middleware` → `plugins` → `runtime`. Circular imports are a build failure. There is no standalone `health` node — health is part of `ports` (`Lifecycle.health()`).
 
 ## E
 
@@ -46,13 +46,13 @@ Terms used throughout the OpenFrame documentation. Each term is defined precisel
 
 ## I
 
-**Identity** — a `Protocol` in `openframe.core.contracts` with three attributes: `name: str`, `version: str`, `capability: Capability`. Composes with `Lifecycle` to form `BasePort`.
+**Identity** — a `Protocol` in `openframe.core.ports` with three attributes: `name: str`, `version: str`, `capability: Capability`. Composes with `Lifecycle` to form `BasePort`.
 
 **Inbound** — the driving side of the hexagon, modelled in `openframe.core.inbound`. `UseCase`, `CommandHandler`, and `QueryHandler` are invoked by inbound adapters (HTTP routes, message handlers, CLI) with a `RequestContext`.
 
 ## L
 
-**Lifecycle** — a `Protocol` in `openframe.core.contracts` with three methods: `async initialize(context: PluginContext) -> None`, `async shutdown() -> None`, `async health() -> PluginHealth`. Health is exclusively `Lifecycle.health()` — there is no separate `HealthCheck` protocol.
+**Lifecycle** — a `Protocol` in `openframe.core.ports` with three methods: `async initialize(context: PluginContext) -> None`, `async shutdown() -> None`, `async health() -> PluginHealth`. Health is exclusively `Lifecycle.health()` — there is no separate `HealthCheck` protocol.
 
 **Lifecycle event** — a named counter increment recorded via `record_lifecycle_event(event_name)`. `"cold_start"` is the most common value, called from Modal template `@enter` hooks.
 
@@ -80,11 +80,11 @@ Terms used throughout the OpenFrame documentation. Each term is defined precisel
 
 **Plugin** — in v3, a "plugin" is simply a registered `BasePort`. There is no separate plugin protocol. Any `BasePort` (i.e. any `BaseRepository`, `BaseProducer`, or `BaseConsumer`) can be registered in `PluginRegistry` without additional wrapper code.
 
-**PluginHealth** — a dataclass in `openframe.core.contracts` returned by `Lifecycle.health()`. Carries `status: PluginStatus`, `message: str | None`, and `details: dict[str, Any]`.
+**PluginHealth** — a dataclass in `openframe.core.ports` returned by `Lifecycle.health()`. Carries `status: PluginStatus`, `message: str | None`, and `details: dict[str, Any]`.
 
 **PluginRegistry** — the managed registry in `openframe.core.plugins`. Accepts any `BasePort`, initialises in registration order, shuts down in LIFO order, and looks up by `Capability` enum member. `get()` is strict — raises `AmbiguousCapabilityError` on >1 match.
 
-**PluginStatus** — an enum in `openframe.core.contracts` with values `READY`, `DEGRADED`, `UNAVAILABLE`.
+**PluginStatus** — an enum in `openframe.core.ports` with values `READY`, `DEGRADED`, `UNAVAILABLE`.
 
 **Port** — an abstract interface defined as a Python `Protocol` in `openframe-core`. Ports define *what* the contract is; adapters define *how* it is fulfilled for a specific backend. Every port in v3 is a `BasePort` — identity-aware and lifecycle-aware.
 

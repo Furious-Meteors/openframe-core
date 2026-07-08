@@ -1,26 +1,26 @@
 """
-openframe/core/contracts/lifecycle.py
+openframe/core/ports/lifecycle.py
 ========================================
 Lifecycle half of the unified BasePort contract (ADR-006).
 
 ``Lifecycle`` is the "how is this thing managed" side — initialize, shut
 down, report health. Combined with
-:class:`~openframe.core.contracts.identity.Identity` (the "what is this
-thing" side) it forms :class:`~openframe.core.contracts.port.BasePort`.
+:class:`~openframe.core.ports.identity.Identity` (the "what is this
+thing" side) it forms :class:`~openframe.core.ports.port.BasePort`.
 
 ``health()`` absorbs the pre-v3 ``HealthCheck.ping()``/``is_ready()`` pair
 into one call returning a rich
-:class:`~openframe.core.contracts.health.PluginHealth` snapshot.
+:class:`~openframe.core.ports.health.PluginHealth` snapshot.
 
 Dependency order:
-    contracts/health    → contracts/context
-    contracts/lifecycle → contracts/health
+    ports/health    → ports/context
+    ports/lifecycle → ports/health
 """
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from openframe.core.contracts.health import PluginContext, PluginHealth
+from openframe.core.ports.health import PluginContext, PluginHealth
 
 __all__ = ["Lifecycle"]
 

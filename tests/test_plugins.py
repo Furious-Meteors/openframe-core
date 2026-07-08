@@ -12,7 +12,7 @@ import dataclasses
 
 import pytest
 
-from openframe.core.contracts import (
+from openframe.core.ports import (
     BasePort,
     Capability,
     PluginContext,

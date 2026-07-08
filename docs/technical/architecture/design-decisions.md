@@ -92,36 +92,60 @@ This is tracked in the roadmap as a documentation task.
 
 ---
 
-## contracts/ Five-Module Dependency Chain (structural watch)
+## ports/ Nine-Module Dependency Chain, Two-Tier (structural watch)
 
-`openframe.core.contracts` is currently five files with a clean linear
-import chain:
+`openframe.core.ports` (previously split across `contracts/` and
+`ports/` — merged in v3.1.0, see [ADR-006](adrs/adr-006-unified-port-lifecycle.md))
+is nine files across two tiers: six primitive modules directly inside
+`ports/`, plus three capability-specific outbound protocol modules in
+the `ports/outbound/` sub-package, mirroring `openframe/core/inbound/`
+on the driving side of the hexagon:
 
 ```
-capability → context → health → identity → lifecycle → port
+ports/
+  capability → context → health → identity → lifecycle → port
+  outbound/
+    repository → port
+    producer    → port
+    consumer    → port
 ```
 
-Each module imports only from the one below it. The DAG is correct today.
+Each primitive module imports only from the one below it; each outbound
+protocol module imports only from `ports/port`. The DAG is correct today.
+The public import surface is unaffected by the two-tier layout —
+`from openframe.core.ports import BaseRepository` works identically
+whether `BaseRepository` lives directly in `ports/` or in
+`ports/outbound/`, because `ports/__init__.py` re-exports everything.
 
-**The concern:** five files for what is one concept — a registrable,
-lifecycle-managed, identity-tagged port. The split is principled (each
-module has one thing), but it creates a surface that is easy to expand
-carelessly. A sixth module that is not as cleanly separated (for example,
+**The concern:** nine files for what is one concept — a registrable,
+lifecycle-managed, identity-tagged port, plus its outbound domain-method
+specialisations. The split is principled (each module has one thing, and
+`outbound/` groups the capability-specific protocols under a name that
+states their role), but it creates a surface that is easy to expand
+carelessly. A new module that is not as cleanly separated (for example,
 one that imports from two non-adjacent layers, or one that blurs the
-concept boundary) would make `contracts/` harder to reason about than the
-original single-file approach, not easier.
+concept boundary) would make `ports/` harder to reason about than the
+current split, not easier.
 
-**The boundary condition:** the current five-module structure is fine as
+**The intake rule for `outbound/`:** any new outbound port protocol that
+targets a specific capability (e.g. `BaseSecretsProvider`,
+`BaseObjectStore`, `BaseFeatureFlagProvider` from `openframe-infra`)
+belongs in `ports/outbound/`, re-exported from the top-level
+`ports/__init__.py`. It does not get its own top-level `ports/` module,
+and it does not live in the consuming package — port contracts belong
+to `openframe-core`.
+
+**The boundary condition:** the current module structure is fine as
 long as each module stays focused on a single, independently nameable
 concept. The signal to watch for is a new module that:
 
-- Imports from more than one existing `contracts/` module at the same
+- Imports from more than one existing `ports/` module at the same
   level (rather than strictly from the layer below it), or
 - Represents a concept that could have been a dataclass or a small
   addition to an existing module rather than its own file.
 
-If either of those happens, consolidation should be considered before the
-chain grows to six or seven files.
+If either of those happens, further consolidation or re-splitting should
+be considered.
 
 **Chosen:** OTLP authentication is handled via `OTEL_EXPORTER_OTLP_HEADERS` env var only. No vendor-specific header construction in `openframe-core`.
 

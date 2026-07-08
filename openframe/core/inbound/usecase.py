@@ -3,7 +3,7 @@ openframe/core/inbound/usecase.py
 ====================================
 UseCase — the general driving-side contract (ADR-006).
 
-The inbound counterpart to :class:`~openframe.core.contracts.port.BasePort`.
+The inbound counterpart to :class:`~openframe.core.ports.port.BasePort`.
 Where a ``BasePort`` is something the application *depends on* (an
 outbound adapter), a ``UseCase`` is something that *drives* the
 application — invoked by an inbound adapter (an HTTP route, a message
@@ -16,7 +16,7 @@ want to distinguish reads from writes at the type level; ``UseCase`` is the
 general form for callers that don't need that distinction.
 
 Dependency order:
-    inbound/context  → contracts/context
+    inbound/context  → ports/context
     inbound/usecase  → inbound/context
 """
 from __future__ import annotations

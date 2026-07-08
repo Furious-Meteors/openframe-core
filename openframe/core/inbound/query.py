@@ -9,7 +9,7 @@ A query reads state and returns a result without mutating anything. Use
 read/write distinction doesn't matter to the caller.
 
 Dependency order:
-    inbound/context → contracts/context
+    inbound/context → ports/context
     inbound/query   → inbound/context
 """
 from __future__ import annotations

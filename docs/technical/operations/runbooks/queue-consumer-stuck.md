@@ -26,7 +26,7 @@ Look for the last message that was started but never acknowledged. A handler tha
 **2. Check broker connectivity.**
 
 ```python
-from openframe.core.contracts import PluginStatus
+from openframe.core.ports import PluginStatus
 import asyncio
 
 health = asyncio.run(consumer.health())

@@ -1,22 +1,22 @@
 """
-openframe/core/contracts/identity.py
+openframe/core/ports/identity.py
 ======================================
 Identity half of the unified BasePort contract (ADR-006).
 
 ``Identity`` is the "what is this thing" side — a name, a version, and a
-typed capability. Combined with :class:`~openframe.core.contracts.lifecycle.Lifecycle`
+typed capability. Combined with :class:`~openframe.core.ports.lifecycle.Lifecycle`
 (the "how is this thing managed" side) it forms
-:class:`~openframe.core.contracts.port.BasePort`.
+:class:`~openframe.core.ports.port.BasePort`.
 
 Dependency order:
-    contracts/capability → (no openframe imports)
-    contracts/identity   → contracts/capability
+    ports/capability → (no openframe imports)
+    ports/identity   → ports/capability
 """
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from openframe.core.contracts.capability import Capability
+from openframe.core.ports.capability import Capability
 
 __all__ = ["Identity"]
 
@@ -37,7 +37,7 @@ class Identity(Protocol):
         version:    Semantic version string of the adapter implementation
                     (e.g. ``"1.2.3"``) — not the protocol version.
         capability: Logical role from the closed
-                    :class:`~openframe.core.contracts.capability.Capability`
+                    :class:`~openframe.core.ports.capability.Capability`
                     taxonomy. Used for capability-based lookup via
                     :meth:`~openframe.core.plugins.registry.PluginRegistry.get`.
     """

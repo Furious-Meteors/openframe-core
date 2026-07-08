@@ -4,9 +4,9 @@ openframe/core/plugins/registry.py
 Explicit plugin registry for the OpenFrame platform kernel (ADR-006).
 
 A "plugin" is just a registered
-:class:`~openframe.core.contracts.port.BasePort` — there is no separate
+:class:`~openframe.core.ports.port.BasePort` — there is no separate
 plugin protocol. Capability lookups are keyed on the closed
-:class:`~openframe.core.contracts.capability.Capability` enum rather than a
+:class:`~openframe.core.ports.capability.Capability` enum rather than a
 raw ``str``.
 
 For application and template code, prefer
@@ -23,17 +23,17 @@ All symbols are **experimental** in v3.0.
    Experimental — API may change or be removed in any version.
 
 Dependency order:
-    contracts        → (apex; no plugins/registry-side imports)
+    ports            → (apex; no plugins/registry-side imports)
     exceptions       → (lowest layer; no openframe imports)
     telemetry        → exceptions (lower than plugins; record_error seam)
-    plugins/registry → contracts + exceptions + telemetry
+    plugins/registry → ports + exceptions + telemetry
 """
 from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
 
-from openframe.core.contracts import (
+from openframe.core.ports import (
     BasePort,
     Capability,
     PluginContext,
@@ -118,11 +118,11 @@ class PluginRegistry:
 
         Args:
             plugin: Port instance. Must satisfy
-                    :class:`~openframe.core.contracts.port.BasePort`
+                    :class:`~openframe.core.ports.port.BasePort`
                     (``name``/``version``/``capability`` attributes and
                     ``initialize``/``shutdown``/``health`` async methods).
             config: This port's validated configuration, threaded through
-                    to :class:`~openframe.core.contracts.health.PluginContext`
+                    to :class:`~openframe.core.ports.health.PluginContext`
                     in :meth:`initialize_all`. Defaults to an empty mapping
                     when not provided.
 
@@ -157,7 +157,7 @@ class PluginRegistry:
     ) -> None:
         """
         Set the principal/tenant threaded through every port's
-        :class:`~openframe.core.contracts.health.PluginContext` in
+        :class:`~openframe.core.ports.health.PluginContext` in
         :meth:`initialize_all`.
 
         Args:
@@ -185,7 +185,7 @@ class PluginRegistry:
 
         Args:
             capability: Logical role from the
-                        :class:`~openframe.core.contracts.capability.Capability`
+                        :class:`~openframe.core.ports.capability.Capability`
                         taxonomy.
 
         Returns:
@@ -237,7 +237,7 @@ class PluginRegistry:
         :meth:`health_all` instead.
 
         Returns:
-            List of :class:`~openframe.core.contracts.health.PluginHealth`
+            List of :class:`~openframe.core.ports.health.PluginHealth`
             instances in registration order.
         """
         result: list[PluginHealth] = []
@@ -259,7 +259,7 @@ class PluginRegistry:
         Initialize all registered ports in registration order.
 
         Each port receives a
-        :class:`~openframe.core.contracts.health.PluginContext` carrying
+        :class:`~openframe.core.ports.health.PluginContext` carrying
         its own registered ``config`` (see :meth:`register`) plus the
         registry-wide ``principal``/``tenant`` set via :meth:`set_context`.
 
@@ -337,7 +337,7 @@ class PluginRegistry:
         ``PluginHealth(status=FAILED, message=str(exc))``.
 
         Returns:
-            Dict mapping port name → :class:`~openframe.core.contracts.health.PluginHealth`.
+            Dict mapping port name → :class:`~openframe.core.ports.health.PluginHealth`.
         """
         result: dict[str, PluginHealth] = {}
         for plugin in self._plugins:

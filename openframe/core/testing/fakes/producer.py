@@ -11,13 +11,13 @@ Zero external dependencies.
    Beta — API may change in minor versions with a deprecation notice.
 
 Dependency order:
-    testing/fakes/producer → contracts + ports + exceptions
+    testing/fakes/producer → ports + exceptions
 """
 from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from openframe.core.contracts import Capability, PluginContext, PluginHealth, PluginStatus
+from openframe.core.ports import Capability, PluginContext, PluginHealth, PluginStatus
 from openframe.core.exceptions import AdapterQueryError
 
 __all__ = ["FakeProducer"]

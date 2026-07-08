@@ -1,11 +1,18 @@
 # System Architecture
 
 `openframe-core` is a pure Python foundation package built around a unified
-port + lifecycle contract layer (ADR-006). `contracts/` is the apex module
+port + lifecycle contract layer (ADR-006). `ports/` is the apex module
 — every other module depends on it, directly or transitively — and both
-the outbound (`ports`) and inbound (`inbound`) sides of the hexagon are
-first-class citizens of the dependency graph. No module imports from a
-module higher in the chain.
+the outbound (`ports/outbound/`) and inbound (`inbound/`) sides of the
+hexagon are first-class citizens of the dependency graph. No module
+imports from a module higher in the chain.
+
+As of v3.1.0, `ports/` unifies what were previously two separate
+modules: `openframe.core.contracts` (the port/lifecycle primitives) and
+`openframe.core.ports` (the outbound protocols, now internally organised
+under `ports/outbound/`). See
+[ADR-006's v3.1.0 addendum](adrs/adr-006-unified-port-lifecycle.md#addendum--contracts-merged-into-ports-outbound-sub-module-introduced-v310)
+for the full rationale.
 
 ---
 
@@ -13,7 +20,7 @@ module higher in the chain.
 
 Every arrow in this diagram is a permitted import direction. No reverse
 imports exist. There is no standalone `health` node — health is a member
-of `contracts` (`Lifecycle.health()` + `PluginHealth`). There is no
+of `ports` (`Lifecycle.health()` + `PluginHealth`). There is no
 standalone `errors` node either — the whole error hierarchy (the adapter
 family and the plugin family) lives in the single `exceptions` package,
 rooted at `OpenFrameError`. `telemetry` imports `exceptions` so its
@@ -24,8 +31,7 @@ ever importing telemetry.
 flowchart LR
     EX["exceptions"]
     CF["config"]
-    CO["contracts"]
-    PO["ports"]
+    PO["ports\n(+ ports/outbound)"]
     IN["inbound"]
     TE["telemetry"]
     TR["tracing"]
@@ -34,19 +40,17 @@ flowchart LR
     RT["runtime"]
     TS["testing"]
 
-    EX --> CF --> CO
+    EX --> CF --> PO
     EX --> TE
-    CO --> PO
-    CO --> IN
-    CO --> TE --> TR --> MW
-    CO --> PL --> RT
+    PO --> IN
+    PO --> TE --> TR --> MW
+    PO --> PL --> RT
     TE --> PL
-    CO --> TS
+    PO --> TS
 
     style EX fill:#1a1a1a,color:#F0F0F0,stroke:#6DB33F
     style CF fill:#1a1a1a,color:#F0F0F0,stroke:#6DB33F
-    style CO fill:#1a1a1a,color:#8CC63F,stroke:#6DB33F
-    style PO fill:#141414,color:#F0F0F0,stroke:#4E8A2A
+    style PO fill:#1a1a1a,color:#8CC63F,stroke:#6DB33F
     style IN fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TE fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TR fill:#141414,color:#F0F0F0,stroke:#4E8A2A
@@ -55,6 +59,12 @@ flowchart LR
     style RT fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TS fill:#141414,color:#F0F0F0,stroke:#4E8A2A
 ```
+
+`ports/outbound/` is drawn as part of the `ports` node, not a sibling —
+it is an internal sub-package (`repository.py`, `producer.py`,
+`consumer.py`, each depending only on `ports/port`), not a separately
+importable module. Consumers always import from the top-level
+`openframe.core.ports` package.
 
 See [ADR-006](adrs/adr-006-unified-port-lifecycle.md) for the full
 rationale, and [capability-taxonomy.md](capability-taxonomy.md) for the
@@ -68,13 +78,12 @@ rationale, and [capability-taxonomy.md](capability-taxonomy.md) for the
 |---|---|---|
 | `exceptions` | `OpenFrameError` (root), `ErrorCode`, `Severity`, `AdapterError` + 5 subclasses, `PluginError` + 4 subclasses (incl. `AmbiguousCapabilityError`) | none |
 | `config` | `BaseAdapterSettings` | `pydantic-settings` |
-| `contracts` | `Identity`, `Lifecycle`, `BasePort`, `Capability`, `PluginStatus`, `PluginHealth`, `PluginContext`, `PrincipalContext`, `TenantContext` | none |
-| `ports` | `BaseRepository[T]`, `BaseProducer[T]`, `BaseConsumer[T]` (each `BasePort` + domain methods) | none |
+| `ports` | `Identity`, `Lifecycle`, `BasePort`, `Capability`, `PluginStatus`, `PluginHealth`, `PluginContext`, `PrincipalContext`, `TenantContext` (primitives) + `BaseRepository[T]`, `BaseProducer[T]`, `BaseConsumer[T]` (outbound protocols, defined in `ports/outbound/`, each `BasePort` + domain methods) | none |
 | `inbound` | `UseCase[TIn, TOut]`, `CommandHandler[TIn]`, `QueryHandler[TIn, TOut]`, `RequestContext` | none |
 | `telemetry` | `setup_telemetry`, `get_tracer`, `get_meter`, `record_lifecycle_event`, `record_error` | `opentelemetry-*` |
 | `tracing` | `TracingProxy` | `opentelemetry-api` |
 | `middleware` | `TelemetryMiddleware`, `ASGIScope`, `ASGIMessage`, `Receive`, `Send`, `ASGIApp` | `opentelemetry-api` |
-| `plugins` | `PluginRegistry` (+ re-exports of `contracts` types) | none |
+| `plugins` | `PluginRegistry` (+ re-exports of `ports` primitives) | none |
 | `runtime` | `ApplicationBootstrap` | none |
 | `testing` | `InMemoryRepository`, `FakeProducer`, `FakeConsumer`, `LifecycleContractTests`, `PortContractTests`, `RepositoryContractTests`, `ProducerContractTests`, `ConsumerContractTests` | none |
 
@@ -82,16 +91,23 @@ rationale, and [capability-taxonomy.md](capability-taxonomy.md) for the
 
 ## The Hexagon, Explicitly
 
-`contracts` sits at the apex. Two sibling modules hang off it, one per side
-of the hexagon:
+`ports` sits at the apex, and now contains both sides of the hexagon's
+outbound half in one module:
 
-- **`ports`** — the outbound/driven side. Every port (`BaseRepository`,
-  `BaseProducer`, `BaseConsumer`) is `BasePort` (`Identity` + `Lifecycle`)
-  plus its own domain methods. Adapters implement these structurally.
-- **`inbound`** — the driving side. `UseCase`/`CommandHandler`/`QueryHandler`
-  are invoked by inbound adapters (HTTP routes via `TelemetryMiddleware`,
-  message handlers, CLI commands) with a `RequestContext` carrying a
-  correlation id and optional identity.
+- **Port primitives** (`ports/capability.py`, `context.py`, `health.py`,
+  `identity.py`, `lifecycle.py`, `port.py`) — `Identity` + `Lifecycle`
+  compose into `BasePort`, the base every outbound port and every
+  registrable plugin extends.
+- **`ports/outbound/`** — the outbound/driven side proper. Every
+  capability-specific protocol (`BaseRepository`, `BaseProducer`,
+  `BaseConsumer`) is `BasePort` plus its own domain methods. Adapters
+  implement these structurally. New outbound capabilities (e.g.
+  `BaseSecretsProvider` from `openframe-infra`) are added here.
+
+`inbound` is the sibling module for the driving side: `UseCase`/
+`CommandHandler`/`QueryHandler` are invoked by inbound adapters (HTTP
+routes via `TelemetryMiddleware`, message handlers, CLI commands) with a
+`RequestContext` carrying a correlation id and optional identity.
 
 `plugins.PluginRegistry` operates directly on `BasePort` — there is no
 separate plugin protocol. A "plugin" is just a registered `BasePort`.
@@ -178,7 +194,7 @@ environment) and runs in-process with the application.
 
 ```mermaid
 flowchart TD
-    PyPI["PyPI\nopenframe-core 3.0.0"]
+    PyPI["PyPI\nopenframe-core 3.1.0"]
     Container["Modal function container\npip install openframe-core"]
     App["FastAPI application\nfrom openframe.core.* import ..."]
     OTel["OTLP endpoint\nGrafana Cloud / Honeycomb / Datadog"]

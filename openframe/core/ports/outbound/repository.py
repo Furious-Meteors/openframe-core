@@ -1,10 +1,10 @@
 """
-openframe/core/ports/repository.py
-=====================================
+openframe/core/ports/outbound/repository.py
+==============================================
 Generic persistence port for the OpenFrame ecosystem (ADR-006).
 
 ``BaseRepository[T]`` extends
-:class:`~openframe.core.contracts.port.BasePort` directly — it is
+:class:`~openframe.core.ports.port.BasePort` directly — it is
 ``Identity + Lifecycle`` plus its own domain methods. There is exactly one
 lifecycle-aware definition of this port; the pre-v3 lifecycle-free version
 no longer exists.
@@ -24,14 +24,14 @@ The parameterised form is a static-analysis-only annotation. At runtime,
 always check against the unparameterised ``BaseRepository``.
 
 Dependency order:
-    contracts/port      → contracts/identity + contracts/lifecycle
-    ports/repository    → contracts/port
+    ports/port                → ports/identity + ports/lifecycle
+    ports/outbound/repository → ports/port
 """
 from __future__ import annotations
 
 from typing import Protocol, TypeVar, runtime_checkable
 
-from openframe.core.contracts.port import BasePort
+from openframe.core.ports.port import BasePort
 
 __all__ = ["BaseRepository"]
 

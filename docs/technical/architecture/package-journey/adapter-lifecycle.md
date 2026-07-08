@@ -67,4 +67,4 @@ return PluginHealth(
 )
 ```
 
-→ See [contracts module](../../../code/modules/contracts.md) for `PluginHealth`, `PluginStatus`, `Lifecycle`.
+→ See [ports module](../../../code/modules/ports.md) for `PluginHealth`, `PluginStatus`, `Lifecycle`.

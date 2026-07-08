@@ -1,7 +1,9 @@
 """
-tests/test_contracts.py
-=========================
-Tests for openframe.core.contracts — Identity, Lifecycle, BasePort,
+tests/test_ports_primitives.py
+================================
+Tests for the port/lifecycle primitives in openframe.core.ports
+(ADR-006) — previously openframe.core.contracts, merged into
+openframe.core.ports in v3.1.0: Identity, Lifecycle, BasePort,
 Capability, PluginStatus/PluginHealth/PluginContext, PrincipalContext,
 TenantContext.
 """
@@ -11,7 +13,7 @@ import dataclasses
 
 import pytest
 
-from openframe.core.contracts import (
+from openframe.core.ports import (
     BasePort,
     Capability,
     Identity,

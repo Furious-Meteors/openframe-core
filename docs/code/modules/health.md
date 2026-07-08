@@ -3,10 +3,10 @@
 !!! warning "Module removed"
     The `openframe.core.health` module and `HealthCheck` protocol (`ping()`/`is_ready()`) were **removed in v3.0.0**. There is no replacement shim or deprecated alias.
 
-Health is now part of the unified `Lifecycle` contract in `openframe.core.contracts`:
+Health is now part of the unified `Lifecycle` contract in `openframe.core.ports`:
 
 ```python
-from openframe.core.contracts import Lifecycle, PluginHealth, PluginStatus
+from openframe.core.ports import Lifecycle, PluginHealth, PluginStatus
 
 # Instead of ping() / is_ready(), implement:
 async def health(self) -> PluginHealth:
@@ -28,7 +28,7 @@ async def health(self) -> PluginHealth:
 
 | v2 | v3 |
 |---|---|
-| `from openframe.core.health import HealthCheck` | `from openframe.core.contracts import Lifecycle, PluginHealth, PluginStatus` |
+| `from openframe.core.health import HealthCheck` | `from openframe.core.ports import Lifecycle, PluginHealth, PluginStatus` |
 | `async def ping(self) -> bool` | `async def health(self) -> PluginHealth` |
 | `async def is_ready(self) -> bool` | `async def health(self) -> PluginHealth` |
 | `isinstance(obj, HealthCheck)` | `isinstance(obj, Lifecycle)` |
@@ -37,5 +37,5 @@ async def health(self) -> PluginHealth:
 
 ## See Also
 
-- [contracts module](contracts.md) — `Lifecycle`, `PluginHealth`, `PluginStatus`, `BasePort`
+- [ports module](ports.md) — `Lifecycle`, `PluginHealth`, `PluginStatus`, `BasePort`
 - [ADR-006](../../technical/architecture/adrs/adr-006-unified-port-lifecycle.md) — full rationale for the removal

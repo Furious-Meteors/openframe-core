@@ -9,7 +9,7 @@ A command mutates state and does not return a domain result — it returns
 ``QueryHandler``) when a return value is needed.
 
 Dependency order:
-    inbound/context  → contracts/context
+    inbound/context  → ports/context
     inbound/command  → inbound/context
 """
 from __future__ import annotations

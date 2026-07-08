@@ -7,19 +7,16 @@ After installing `openframe-core`, explore what it provides.
 ## Browse the Namespace
 
 ```python
-import openframe.core.contracts
 import openframe.core.ports
 import openframe.core.exceptions
 import openframe.core.inbound
 import openframe.core.middleware
 
 # All public exports
-print(dir(openframe.core.contracts))
-# ['BasePort', 'Capability', 'Identity', 'Lifecycle', 'PluginContext',
-#  'PluginHealth', 'PluginStatus', 'PrincipalContext', 'TenantContext', ...]
-
 print(dir(openframe.core.ports))
-# ['BaseConsumer', 'BaseProducer', 'BaseRepository', '__all__', ...]
+# ['BaseConsumer', 'BaseProducer', 'BaseRepository', 'BasePort', 'Capability',
+#  'Identity', 'Lifecycle', 'PluginContext', 'PluginHealth', 'PluginStatus',
+#  'PrincipalContext', 'TenantContext', '__all__', ...]
 ```
 
 ---
@@ -27,8 +24,9 @@ print(dir(openframe.core.ports))
 ## Verify BasePort Conformance
 
 ```python
-from openframe.core.contracts import BasePort, Capability, PluginContext, PluginHealth, PluginStatus
-from openframe.core.ports import BaseRepository
+from openframe.core.ports import (
+    BasePort, Capability, PluginContext, PluginHealth, PluginStatus, BaseRepository,
+)
 
 class MyRepo:
     # Identity
@@ -94,7 +92,7 @@ print(isinstance(exc, OpenFrameError))   # True — single catch point for the e
 
 ```python
 import asyncio
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 from openframe.core.plugins import PluginRegistry
 
 registry = PluginRegistry()

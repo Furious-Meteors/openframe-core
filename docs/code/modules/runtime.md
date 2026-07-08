@@ -76,7 +76,7 @@ Delegate to `registry.get()` / `registry.get_all()`. See [plugins module](plugin
 
 ```python
 from openframe.core.runtime import ApplicationBootstrap
-from openframe.core.contracts import Capability
+from openframe.core.ports import Capability
 
 class MyServiceBootstrap(ApplicationBootstrap):
     def configure(self) -> None:
