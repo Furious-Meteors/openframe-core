@@ -2908,9 +2908,7 @@
 
 <h1 id="openframe-core">openframe-core<a class="headerlink" href="#openframe-core" title="Permanent link">&para;</a></h1>
 <p>The foundation package of the OpenFrame Microservice Development Suite — the unified port + lifecycle contract layer, structured exceptions, telemetry, and ASGI middleware for any hexagonal architecture Python service. Every ecosystem package pins <code>openframe-core&gt;=3.0,&lt;4</code>.</p>
-<blockquote>
-<p><strong>v3.0.0 is a breaking redesign.</strong> The old lifecycle-free ports, standalone <code>HealthCheck</code>, and separate <code>OpenFramePlugin</code> protocol are replaced by a single unified contract layer (<code>BasePort</code> = <code>Identity</code> + <code>Lifecycle</code>). The error hierarchy is consolidated under <code>OpenFrameError</code>. <strong>v3.1.0 merges <code>openframe.core.contracts</code> into <code>openframe.core.ports</code></strong> and moves the outbound protocols into an internal <code>ports/outbound/</code> sub-module — no compatibility shim, no public API change. See <a href="technical/architecture/adrs/adr-006-unified-port-lifecycle/">ADR-006</a> for the full rationale.</p>
-</blockquote>
+<p><code>openframe-core</code> is built around a single unified contract layer: <code>BasePort</code> (<code>Identity</code> + <code>Lifecycle</code>) is the one base every outbound port and every registrable plugin extends — there is no separate health protocol and no separate plugin protocol. The error hierarchy is consolidated under a single <code>OpenFrameError</code> root. The full contract layer, including the capability-specific outbound protocols (<code>BaseRepository</code>, <code>BaseProducer</code>, <code>BaseConsumer</code>), lives in <code>openframe.core.ports</code>. See <a href="technical/architecture/adrs/adr-006-unified-port-lifecycle/">ADR-006</a> for the full design rationale.</p>
 <hr />
 <h2 id="developer-guide">Developer Guide<a class="headerlink" href="#developer-guide" title="Permanent link">&para;</a></h2>
 <table>

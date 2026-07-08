@@ -3174,7 +3174,7 @@
 <h2 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h2>
 <h2 id="v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking">v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)<a class="headerlink" href="#v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>Ecosystem packages pin <code>openframe-core&gt;=3.0,&lt;4</code>.</p>
+<p>Ecosystem packages pinned <code>openframe-core&gt;=3.0,&lt;4</code>; <code>openframe-adapters</code> has migrated its imports to <code>openframe.core.ports</code>.</p>
 </blockquote>
 <ul>
 <li><code>openframe.core.contracts</code> renamed to <code>openframe.core.ports</code>. All names previously importable from <code>openframe.core.contracts</code> are now importable from <code>openframe.core.ports</code>. No compatibility shim — update all imports.</li>
@@ -3184,7 +3184,7 @@
 <hr />
 <h2 id="v300-unified-port-lifecycle-contract-breaking">v3.0.0 — Unified Port + Lifecycle Contract (breaking)<a class="headerlink" href="#v300-unified-port-lifecycle-contract-breaking" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>Full migration guide: <a href="../../architecture/adrs/adr-006-unified-port-lifecycle/">ADR-006</a>. Ecosystem packages pin <code>openframe-core&gt;=3.0,&lt;4</code>.</p>
+<p>Migration guide: <a href="../../architecture/adrs/adr-006-unified-port-lifecycle/">ADR-006</a>. Ecosystem packages pinned <code>openframe-core&gt;=3.0,&lt;4</code>; all packages have since migrated.</p>
 </blockquote>
 <p><strong>Removed:</strong></p>
 <ul>
