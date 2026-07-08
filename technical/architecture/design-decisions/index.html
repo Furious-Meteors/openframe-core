@@ -1405,10 +1405,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#no-_grafana_headers-in-core" class="md-nav__link">
+  <a href="#three-application-wiring-options-unresolved-watch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        No _grafana_headers() in Core
+        Three Application Wiring Options (unresolved, watch)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contracts-five-module-dependency-chain-structural-watch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        contracts/ Five-Module Dependency Chain (structural watch)
       
     </span>
   </a>
@@ -2951,10 +2962,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#no-_grafana_headers-in-core" class="md-nav__link">
+  <a href="#three-application-wiring-options-unresolved-watch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        No _grafana_headers() in Core
+        Three Application Wiring Options (unresolved, watch)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contracts-five-module-dependency-chain-structural-watch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        contracts/ Five-Module Dependency Chain (structural watch)
       
     </span>
   </a>
@@ -3096,7 +3118,63 @@
 <p><strong>Why:</strong> <code>BaseHTTPMiddleware</code> has documented limitations around streaming responses and request body access. It buffers responses, which prevents streaming use cases. Pure ASGI middleware receives the raw <code>send</code> callable and can intercept it with a thin wrapper (<code>send_with_telemetry</code>) that captures the status code without buffering.</p>
 <p><strong>Consequences:</strong> Route template extraction is less convenient — Starlette sets <code>scope["route"]</code> to a <code>Route</code> object only after routing completes; the raw path is used as a fallback. This increases metric cardinality for routes with path parameters but is the correct trade-off for framework independence.</p>
 <hr />
-<h2 id="no-_grafana_headers-in-core">No _grafana_headers() in Core<a class="headerlink" href="#no-_grafana_headers-in-core" title="Permanent link">&para;</a></h2>
+<h2 id="three-application-wiring-options-unresolved-watch">Three Application Wiring Options (unresolved, watch)<a class="headerlink" href="#three-application-wiring-options-unresolved-watch" title="Permanent link">&para;</a></h2>
+<p>Three wiring patterns now coexist in <code>openframe-core</code>:</p>
+<ol>
+<li><strong><code>deps.py</code> + <code>lru_cache</code></strong> — module-level cached factory functions.
+   Simple, familiar, no framework. Most existing templates use this.</li>
+<li><strong><code>PluginRegistry</code> direct</strong> — explicit registry construction and
+   <code>initialize_all()</code> call in a <code>lifespan</code> handler. Full control, no
+   abstraction layer.</li>
+<li><strong><code>ApplicationBootstrap</code></strong> — subclass-based composition root. Manages
+   the <code>PluginRegistry</code> internally and adds <code>configure()</code> → <code>start()</code> →
+   <code>stop()</code> lifecycle.</li>
+</ol>
+<p>The ambiguity is better than before — <code>ApplicationBootstrap</code> has a name,
+a docstring, and the correct <code>stop()</code> behaviour (port shutdown +
+<code>shutdown_telemetry()</code>). But it is still three options without a clear
+hierarchy.</p>
+<p><strong>The risk:</strong> if the docs don't establish <code>ApplicationBootstrap</code> as the
+recommended path — with the other two documented as deliberate
+alternatives and the conditions under which you'd choose each — the
+ambiguity just gets more documented rather than actually resolved. A new
+adapter author reads the code and sees three equivalent-looking patterns
+with no signal about which to start from.</p>
+<p><strong>The resolution path:</strong> update the developer guide and the runtime module
+doc to name <code>ApplicationBootstrap</code> as the default starting point, and
+explain the two alternatives as escape hatches:</p>
+<ul>
+<li>Use <code>PluginRegistry</code> directly when you need fine-grained control over
+  initialization order or want to avoid the subclass pattern.</li>
+<li>Use <code>deps.py</code> + <code>lru_cache</code> when you're wiring a single port without a
+  full startup/shutdown lifecycle (e.g. a simple stateless function).</li>
+</ul>
+<p>This is tracked in the roadmap as a documentation task.</p>
+<hr />
+<h2 id="contracts-five-module-dependency-chain-structural-watch">contracts/ Five-Module Dependency Chain (structural watch)<a class="headerlink" href="#contracts-five-module-dependency-chain-structural-watch" title="Permanent link">&para;</a></h2>
+<p><code>openframe.core.contracts</code> is currently five files with a clean linear
+import chain:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>capability → context → health → identity → lifecycle → port
+</span></code></pre></div>
+<p>Each module imports only from the one below it. The DAG is correct today.</p>
+<p><strong>The concern:</strong> five files for what is one concept — a registrable,
+lifecycle-managed, identity-tagged port. The split is principled (each
+module has one thing), but it creates a surface that is easy to expand
+carelessly. A sixth module that is not as cleanly separated (for example,
+one that imports from two non-adjacent layers, or one that blurs the
+concept boundary) would make <code>contracts/</code> harder to reason about than the
+original single-file approach, not easier.</p>
+<p><strong>The boundary condition:</strong> the current five-module structure is fine as
+long as each module stays focused on a single, independently nameable
+concept. The signal to watch for is a new module that:</p>
+<ul>
+<li>Imports from more than one existing <code>contracts/</code> module at the same
+  level (rather than strictly from the layer below it), or</li>
+<li>Represents a concept that could have been a dataclass or a small
+  addition to an existing module rather than its own file.</li>
+</ul>
+<p>If either of those happens, consolidation should be considered before the
+chain grows to six or seven files.</p>
 <p><strong>Chosen:</strong> OTLP authentication is handled via <code>OTEL_EXPORTER_OTLP_HEADERS</code> env var only. No vendor-specific header construction in <code>openframe-core</code>.</p>
 <p><strong>Rejected:</strong> <code>_grafana_headers()</code> function from the production template that constructs a <code>Basic</code> auth header from Grafana-specific credentials.</p>
 <p><strong>Why:</strong> The OTel SDK natively reads <code>OTEL_EXPORTER_OTLP_HEADERS</code> and applies it to every export request. Implementing Grafana-specific header construction in <code>openframe-core</code> couples the package to one specific backend, contradicting the platform-agnostic design. Any OTLP-compatible backend (Grafana Cloud, Honeycomb, Datadog, Jaeger, self-hosted Tempo) works by setting the standard env var.</p>
