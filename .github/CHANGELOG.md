@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Watch items (architectural)
+
+- **Three application wiring options** — `deps.py` + `lru_cache`,
+  `PluginRegistry` direct, and `ApplicationBootstrap` now coexist without a
+  documented hierarchy. The ambiguity is better-named than before but still
+  unresolved. The next documentation pass must establish `ApplicationBootstrap`
+  as the default starting point and frame the other two as explicit alternatives
+  with stated conditions. Tracked in the roadmap.
+
+- **`contracts/` five-module depth** — the `capability → context → health →
+  identity → lifecycle → port` chain is clean today. The risk is a sixth or
+  seventh module that doesn't stay within the single-concept-per-file rule or
+  that imports from non-adjacent layers. Consolidate before expanding if either
+  signal appears.
+
 ### Added
 
 - **`openframe.core.telemetry.shutdown_telemetry()`** — flushes and shuts

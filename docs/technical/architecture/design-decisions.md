@@ -54,7 +54,74 @@ Non-obvious architectural decisions made during the design and review process. F
 
 ---
 
-## No _grafana_headers() in Core
+## Three Application Wiring Options (unresolved, watch)
+
+Three wiring patterns now coexist in `openframe-core`:
+
+1. **`deps.py` + `lru_cache`** — module-level cached factory functions.
+   Simple, familiar, no framework. Most existing templates use this.
+2. **`PluginRegistry` direct** — explicit registry construction and
+   `initialize_all()` call in a `lifespan` handler. Full control, no
+   abstraction layer.
+3. **`ApplicationBootstrap`** — subclass-based composition root. Manages
+   the `PluginRegistry` internally and adds `configure()` → `start()` →
+   `stop()` lifecycle.
+
+The ambiguity is better than before — `ApplicationBootstrap` has a name,
+a docstring, and the correct `stop()` behaviour (port shutdown +
+`shutdown_telemetry()`). But it is still three options without a clear
+hierarchy.
+
+**The risk:** if the docs don't establish `ApplicationBootstrap` as the
+recommended path — with the other two documented as deliberate
+alternatives and the conditions under which you'd choose each — the
+ambiguity just gets more documented rather than actually resolved. A new
+adapter author reads the code and sees three equivalent-looking patterns
+with no signal about which to start from.
+
+**The resolution path:** update the developer guide and the runtime module
+doc to name `ApplicationBootstrap` as the default starting point, and
+explain the two alternatives as escape hatches:
+
+- Use `PluginRegistry` directly when you need fine-grained control over
+  initialization order or want to avoid the subclass pattern.
+- Use `deps.py` + `lru_cache` when you're wiring a single port without a
+  full startup/shutdown lifecycle (e.g. a simple stateless function).
+
+This is tracked in the roadmap as a documentation task.
+
+---
+
+## contracts/ Five-Module Dependency Chain (structural watch)
+
+`openframe.core.contracts` is currently five files with a clean linear
+import chain:
+
+```
+capability → context → health → identity → lifecycle → port
+```
+
+Each module imports only from the one below it. The DAG is correct today.
+
+**The concern:** five files for what is one concept — a registrable,
+lifecycle-managed, identity-tagged port. The split is principled (each
+module has one thing), but it creates a surface that is easy to expand
+carelessly. A sixth module that is not as cleanly separated (for example,
+one that imports from two non-adjacent layers, or one that blurs the
+concept boundary) would make `contracts/` harder to reason about than the
+original single-file approach, not easier.
+
+**The boundary condition:** the current five-module structure is fine as
+long as each module stays focused on a single, independently nameable
+concept. The signal to watch for is a new module that:
+
+- Imports from more than one existing `contracts/` module at the same
+  level (rather than strictly from the layer below it), or
+- Represents a concept that could have been a dataclass or a small
+  addition to an existing module rather than its own file.
+
+If either of those happens, consolidation should be considered before the
+chain grows to six or seven files.
 
 **Chosen:** OTLP authentication is handled via `OTEL_EXPORTER_OTLP_HEADERS` env var only. No vendor-specific header construction in `openframe-core`.
 

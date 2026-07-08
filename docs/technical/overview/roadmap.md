@@ -6,6 +6,14 @@
 
 ### openframe-core
 
+Documentation tasks:
+
+- **Establish `ApplicationBootstrap` as the recommended wiring path** in
+  the developer guide and the `runtime` module doc. Document `PluginRegistry`
+  direct usage and `deps.py` + `lru_cache` as explicit alternatives with the
+  conditions under which you'd choose each. Without this, three equivalent-looking
+  patterns coexist with no hierarchy — see [Design Decisions](../architecture/design-decisions.md).
+
 Lower-priority items:
 
 - `test_middleware_types.py` — add missing test file for ASGI type alias imports

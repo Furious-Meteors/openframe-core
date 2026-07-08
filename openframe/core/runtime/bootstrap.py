@@ -1,7 +1,25 @@
 """
 openframe/core/runtime/bootstrap.py
 =====================================
-Optional composition root base class for OpenFrame applications (ADR-006).
+Recommended composition root for OpenFrame applications (ADR-006).
+
+``ApplicationBootstrap`` is the recommended starting point for wiring ports
+in application code. It wraps ``PluginRegistry`` and provides a structured
+``configure → start → stop`` lifecycle with correct shutdown ordering:
+ports are shut down first (LIFO), then the OTel SDK is flushed via
+``shutdown_telemetry()``.
+
+When to use each wiring option
+--------------------------------
+- **``ApplicationBootstrap`` (recommended)** — structured startup/shutdown,
+  correct telemetry flush, subclass-friendly. Use this for all application
+  and template code.
+- **``PluginRegistry`` direct** — when you need fine-grained control over
+  initialization order, or when building a framework layer on top of
+  openframe-core that manages the registry itself.
+- **``deps.py`` + ``lru_cache``** — when wiring a single stateless port
+  without a full startup/shutdown lifecycle (e.g. a lightweight function
+  with no graceful-shutdown requirement).
 
 All symbols are **experimental** in v3.0.
 
@@ -31,16 +49,18 @@ __stability__ = "experimental"
 
 class ApplicationBootstrap:
     """
-    Optional composition root base class.
+    Recommended composition root for OpenFrame applications.
 
-    Manages port registration and lifecycle. Applications that want
-    structured startup/shutdown may subclass this. Applications that
-    prefer explicit ``deps.py`` wiring continue to work exactly as before —
-    this class is **never** mandatory.
+    Wraps :class:`~openframe.core.plugins.registry.PluginRegistry` and
+    provides a structured ``configure → start → stop`` lifecycle. Subclass
+    this and override :meth:`configure` to register ports. Handles correct
+    shutdown ordering automatically: ports are shut down first (LIFO), then
+    the OTel SDK is flushed via ``shutdown_telemetry()`` so no spans are
+    silently dropped at process exit.
 
     .. stability: experimental
 
-    Subclass usage::
+    **Recommended usage — async context manager**::
 
         class MyServiceBootstrap(ApplicationBootstrap):
             def configure(self) -> None:
@@ -52,7 +72,7 @@ class ApplicationBootstrap:
             service = ItemService(repo)
             await serve(service)
 
-    Manual lifecycle usage::
+    **Manual lifecycle usage**::
 
         bootstrap = MyServiceBootstrap()
         bootstrap.configure()
@@ -61,6 +81,12 @@ class ApplicationBootstrap:
             await serve(...)
         finally:
             await bootstrap.stop()
+
+    **When to use** :class:`~openframe.core.plugins.registry.PluginRegistry`
+    **directly instead:** when you need fine-grained control over
+    initialization order (e.g. port A must complete before port B is even
+    registered), or when building a framework layer that manages the registry
+    lifecycle itself rather than delegating to a composition root.
     """
 
     def __init__(self) -> None:

@@ -9,6 +9,14 @@ plugin protocol. Capability lookups are keyed on the closed
 :class:`~openframe.core.contracts.capability.Capability` enum rather than a
 raw ``str``.
 
+For application and template code, prefer
+:class:`~openframe.core.runtime.bootstrap.ApplicationBootstrap` (in
+``openframe.core.runtime``), which wraps ``PluginRegistry`` and adds the
+correct shutdown ordering (ports then ``shutdown_telemetry()``). Use
+``PluginRegistry`` directly when you need fine-grained control over
+initialization order or are building a framework layer on top of
+openframe-core.
+
 All symbols are **experimental** in v3.0.
 
 .. stability: experimental
@@ -50,7 +58,8 @@ _log = logging.getLogger(__name__)
 
 class PluginRegistry:
     """
-    Explicit plugin registry.
+    Explicit plugin registry — the underlying mechanism for port lifecycle
+    management.
 
     Maintains registration order. Initializes ports in registration order.
     Shuts down ports in reverse registration order (LIFO).
@@ -58,9 +67,16 @@ class PluginRegistry:
     explicit. Optional entry-point discovery is deferred to a future minor
     version.
 
+    For application and template code, prefer
+    :class:`~openframe.core.runtime.bootstrap.ApplicationBootstrap`, which
+    wraps this registry and adds the correct shutdown ordering (ports then
+    OTel flush). Use ``PluginRegistry`` directly when you need fine-grained
+    control over initialization order, or when building a framework layer
+    that manages the registry lifecycle itself.
+
     .. stability: experimental
 
-    Usage::
+    Direct usage::
 
         registry = PluginRegistry()
         registry.register(PostgresRepository(settings))
@@ -69,14 +85,13 @@ class PluginRegistry:
         # ... serve traffic ...
         await registry.shutdown_all()
 
-    Or as an async context manager::
+    As an async context manager (calls ``shutdown_all()`` on exit, but does
+    **not** flush telemetry — call ``shutdown_telemetry()`` separately)::
 
         async with PluginRegistry() as registry:
             registry.register(PostgresRepository(settings))
-            registry.register(RedisCache(settings))
             await registry.initialize_all()
             # ... serve traffic ...
-        # shutdown_all() called automatically on exit
     """
 
     def __init__(self) -> None:

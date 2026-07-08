@@ -21,6 +21,13 @@ outbound (``ports``) and inbound (``inbound``) sides of the hexagon:
   primitives threaded through both ``PluginContext`` (outbound) and
   ``RequestContext`` (inbound).
 
+**What belongs here**
+
+A type belongs in ``contracts/`` only if removing it would force two or
+more of ``ports/``, ``inbound/``, and ``plugins/`` to either duplicate it
+or import from each other. Types needed by only one downstream module
+belong in that module, not here.
+
 See ``docs/technical/architecture/adrs/adr-006-unified-port-lifecycle.md``
 for the full design rationale, including what this module replaces
 (``health/``, ``plugins/contracts.OpenFramePlugin``, the pre-v3
