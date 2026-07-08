@@ -1416,10 +1416,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#contracts-five-module-dependency-chain-structural-watch" class="md-nav__link">
+  <a href="#ports-nine-module-dependency-chain-two-tier-structural-watch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        contracts/ Five-Module Dependency Chain (structural watch)
+        ports/ Nine-Module Dependency Chain, Two-Tier (structural watch)
       
     </span>
   </a>
@@ -2228,8 +2228,6 @@
       
         
       
-        
-      
     
     
     
@@ -2329,34 +2327,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -2973,10 +2943,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#contracts-five-module-dependency-chain-structural-watch" class="md-nav__link">
+  <a href="#ports-nine-module-dependency-chain-two-tier-structural-watch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        contracts/ Five-Module Dependency Chain (structural watch)
+        ports/ Nine-Module Dependency Chain, Two-Tier (structural watch)
       
     </span>
   </a>
@@ -3151,30 +3121,53 @@ explain the two alternatives as escape hatches:</p>
 </ul>
 <p>This is tracked in the roadmap as a documentation task.</p>
 <hr />
-<h2 id="contracts-five-module-dependency-chain-structural-watch">contracts/ Five-Module Dependency Chain (structural watch)<a class="headerlink" href="#contracts-five-module-dependency-chain-structural-watch" title="Permanent link">&para;</a></h2>
-<p><code>openframe.core.contracts</code> is currently five files with a clean linear
-import chain:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>capability → context → health → identity → lifecycle → port
+<h2 id="ports-nine-module-dependency-chain-two-tier-structural-watch">ports/ Nine-Module Dependency Chain, Two-Tier (structural watch)<a class="headerlink" href="#ports-nine-module-dependency-chain-two-tier-structural-watch" title="Permanent link">&para;</a></h2>
+<p><code>openframe.core.ports</code> (previously split across <code>contracts/</code> and
+<code>ports/</code> — merged in v3.1.0, see <a href="../adrs/adr-006-unified-port-lifecycle/">ADR-006</a>)
+is nine files across two tiers: six primitive modules directly inside
+<code>ports/</code>, plus three capability-specific outbound protocol modules in
+the <code>ports/outbound/</code> sub-package, mirroring <code>openframe/core/inbound/</code>
+on the driving side of the hexagon:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ports/
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  capability → context → health → identity → lifecycle → port
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  outbound/
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    repository → port
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    producer    → port
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    consumer    → port
 </span></code></pre></div>
-<p>Each module imports only from the one below it. The DAG is correct today.</p>
-<p><strong>The concern:</strong> five files for what is one concept — a registrable,
-lifecycle-managed, identity-tagged port. The split is principled (each
-module has one thing), but it creates a surface that is easy to expand
-carelessly. A sixth module that is not as cleanly separated (for example,
+<p>Each primitive module imports only from the one below it; each outbound
+protocol module imports only from <code>ports/port</code>. The DAG is correct today.
+The public import surface is unaffected by the two-tier layout —
+<code>from openframe.core.ports import BaseRepository</code> works identically
+whether <code>BaseRepository</code> lives directly in <code>ports/</code> or in
+<code>ports/outbound/</code>, because <code>ports/__init__.py</code> re-exports everything.</p>
+<p><strong>The concern:</strong> nine files for what is one concept — a registrable,
+lifecycle-managed, identity-tagged port, plus its outbound domain-method
+specialisations. The split is principled (each module has one thing, and
+<code>outbound/</code> groups the capability-specific protocols under a name that
+states their role), but it creates a surface that is easy to expand
+carelessly. A new module that is not as cleanly separated (for example,
 one that imports from two non-adjacent layers, or one that blurs the
-concept boundary) would make <code>contracts/</code> harder to reason about than the
-original single-file approach, not easier.</p>
-<p><strong>The boundary condition:</strong> the current five-module structure is fine as
+concept boundary) would make <code>ports/</code> harder to reason about than the
+current split, not easier.</p>
+<p><strong>The intake rule for <code>outbound/</code>:</strong> any new outbound port protocol that
+targets a specific capability (e.g. <code>BaseSecretsProvider</code>,
+<code>BaseObjectStore</code>, <code>BaseFeatureFlagProvider</code> from <code>openframe-infra</code>)
+belongs in <code>ports/outbound/</code>, re-exported from the top-level
+<code>ports/__init__.py</code>. It does not get its own top-level <code>ports/</code> module,
+and it does not live in the consuming package — port contracts belong
+to <code>openframe-core</code>.</p>
+<p><strong>The boundary condition:</strong> the current module structure is fine as
 long as each module stays focused on a single, independently nameable
 concept. The signal to watch for is a new module that:</p>
 <ul>
-<li>Imports from more than one existing <code>contracts/</code> module at the same
+<li>Imports from more than one existing <code>ports/</code> module at the same
   level (rather than strictly from the layer below it), or</li>
 <li>Represents a concept that could have been a dataclass or a small
   addition to an existing module rather than its own file.</li>
 </ul>
-<p>If either of those happens, consolidation should be considered before the
-chain grows to six or seven files.</p>
+<p>If either of those happens, further consolidation or re-splitting should
+be considered.</p>
 <p><strong>Chosen:</strong> OTLP authentication is handled via <code>OTEL_EXPORTER_OTLP_HEADERS</code> env var only. No vendor-specific header construction in <code>openframe-core</code>.</p>
 <p><strong>Rejected:</strong> <code>_grafana_headers()</code> function from the production template that constructs a <code>Basic</code> auth header from Grafana-specific credentials.</p>
 <p><strong>Why:</strong> The OTel SDK natively reads <code>OTEL_EXPORTER_OTLP_HEADERS</code> and applies it to every export request. Implementing Grafana-specific header construction in <code>openframe-core</code> couples the package to one specific backend, contradicting the platform-agnostic design. Any OTLP-compatible backend (Grafana Cloud, Honeycomb, Datadog, Jaeger, self-hosted Tempo) works by setting the standard env var.</p>

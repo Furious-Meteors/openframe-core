@@ -2095,8 +2095,6 @@
       
         
       
-        
-      
     
     
     
@@ -2196,34 +2194,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -3076,7 +3046,7 @@
 <p>Business logic lives in the centre. Infrastructure lives on the outside. The centre never imports from the outside.</p>
 <pre class="mermaid"><code>flowchart TD
     CORE["core/\nbusiness logic\nno infrastructure imports"]
-    ADAPTER["adapters/\nPostgres · Redis · Kafka\nImplement BasePort from contracts/"]
+    ADAPTER["adapters/\nPostgres · Redis · Kafka\nImplement BasePort from ports/"]
     REGISTRY["PluginRegistry\nmanaged lifecycle + capability lookup"]
     ROUTES["api/ or entry/\nHTTP routes · message handlers\ncalls UseCases, not adapters directly"]
 
@@ -3090,17 +3060,17 @@
     style ROUTES fill:#141414,color:#F0F0F0,stroke:#4E8A2A</code></pre>
 <hr />
 <h2 id="two-sides-of-the-hexagon">Two Sides of the Hexagon<a class="headerlink" href="#two-sides-of-the-hexagon" title="Permanent link">&para;</a></h2>
-<p><code>openframe-core</code> v3 models both sides of the hexagon explicitly:</p>
+<p><code>openframe-core</code> models both sides of the hexagon explicitly:</p>
 <ul>
-<li><strong>Outbound (driven) side</strong> — <code>ports/</code>: <code>BaseRepository</code>, <code>BaseProducer</code>, <code>BaseConsumer</code>. These are what business logic calls to reach the outside world.</li>
+<li><strong>Outbound (driven) side</strong> — <code>ports/outbound/</code>: <code>BaseRepository</code>, <code>BaseProducer</code>, <code>BaseConsumer</code>. These are what business logic calls to reach the outside world.</li>
 <li><strong>Inbound (driving) side</strong> — <code>inbound/</code>: <code>UseCase</code>, <code>CommandHandler</code>, <code>QueryHandler</code>. These are what inbound adapters (HTTP routes, message handlers, CLI commands) call into business logic.</li>
 </ul>
-<p>Both sides are built on <code>contracts/</code> — the apex module that defines <code>BasePort</code>, <code>Identity</code>, <code>Lifecycle</code>, and <code>Capability</code>.</p>
+<p>Both sides are built on <code>ports/</code> — the apex module that defines <code>BasePort</code>, <code>Identity</code>, <code>Lifecycle</code>, and <code>Capability</code> (the outbound protocols above are internally organised in its <code>outbound/</code> sub-module, but always imported from the top-level <code>openframe.core.ports</code> package).</p>
 <hr />
 <h2 id="ports-what-the-contract-is">Ports: What the Contract Is<a class="headerlink" href="#ports-what-the-contract-is" title="Permanent link">&para;</a></h2>
 <p>A port is a Python <code>Protocol</code> — a structural interface. <code>BaseRepository[T]</code> says: "whatever object I call <code>get(entity_id)</code> on must return <code>T | None</code>." It does not say anything about Postgres, MongoDB, or an in-memory dict.</p>
-<p>Every port in v3 is also a <code>BasePort</code> — it has <code>name</code>, <code>version</code>, <code>capability</code>, <code>initialize</code>, <code>shutdown</code>, and <code>health</code>. An adapter that implements <code>BaseRepository</code> is automatically lifecycle-aware and registry-registrable with no extra wrapper code.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># contracts/ defines BasePort; ports/ adds domain methods</span>
+<p>Every port is also a <code>BasePort</code> — it has <code>name</code>, <code>version</code>, <code>capability</code>, <code>initialize</code>, <code>shutdown</code>, and <code>health</code>. An adapter that implements <code>BaseRepository</code> is automatically lifecycle-aware and registry-registrable with no extra wrapper code.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># ports/ defines BasePort; ports/outbound/ adds domain methods</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseRepository</span><span class="p">(</span><span class="n">BasePort</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="c1"># ... + name, version, capability, initialize, shutdown, health from BasePort</span>

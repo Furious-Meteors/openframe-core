@@ -1337,6 +1337,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#where-capability-specific-outbound-port-protocols-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where capability-specific outbound port protocols live
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2195,8 +2206,6 @@
       
         
       
-        
-      
     
     
     
@@ -2296,34 +2305,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -2917,6 +2898,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#where-capability-specific-outbound-port-protocols-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where capability-specific outbound port protocols live
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3025,12 +3017,12 @@
 
 
 <h1 id="capability-taxonomy">Capability Taxonomy<a class="headerlink" href="#capability-taxonomy" title="Permanent link">&para;</a></h1>
-<p><code>openframe.core.contracts.Capability</code> is a closed <code>str</code> <code>Enum</code> — the
+<p><code>openframe.core.ports.Capability</code> is a closed <code>str</code> <code>Enum</code> — the
 typed vocabulary every <code>BasePort</code>'s <code>capability</code> attribute is drawn from,
 and the type <code>PluginRegistry.get()</code>/<code>get_all()</code> key their lookups on
 (ADR-006). This page is the human-readable reference derived from that
 enum; when the two disagree, the enum in
-<a href="https://github.com/Furious-Meteors/openframe-core/blob/production/openframe/core/contracts/capability.py"><code>openframe/core/contracts/capability.py</code></a>
+<a href="https://github.com/Furious-Meteors/openframe-core/blob/production/openframe/core/ports/capability.py"><code>openframe/core/ports/capability.py</code></a>
 is authoritative.</p>
 <hr />
 <h2 id="members">Members<a class="headerlink" href="#members" title="Permanent link">&para;</a></h2>
@@ -3104,7 +3096,7 @@ is authoritative.</p>
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <p><code>Capability</code> subclasses <code>str</code>, so members compare equal to their value and
 serialise cleanly to logs/JSON without an explicit <code>.value</code> access:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.ports</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">assert</span> <span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span> <span class="o">==</span> <span class="s2">&quot;persistence&quot;</span>
 </span></code></pre></div>
@@ -3134,6 +3126,19 @@ across the ecosystem. See
 <a href="../adrs/adr-006-unified-port-lifecycle/#alternatives-considered">ADR-006</a>
 for why an open <code>str</code>/<code>NewType</code> taxonomy was rejected in favour of a
 closed enum.</p>
+<hr />
+<h2 id="where-capability-specific-outbound-port-protocols-live">Where capability-specific outbound port protocols live<a class="headerlink" href="#where-capability-specific-outbound-port-protocols-live" title="Permanent link">&para;</a></h2>
+<p>Capability-specific outbound port protocols (<code>BaseRepository</code> for
+<code>PERSISTENCE</code>, <code>BaseProducer</code>/<code>BaseConsumer</code> for <code>QUEUE</code>) live in
+<code>openframe/core/ports/outbound/</code>, not in the adapter packages that
+implement them. A new <code>Capability</code> member (e.g. <code>SECRETS</code>, <code>FLAGS</code>,
+<code>STORAGE</code>) typically arrives together with a new base protocol in
+<code>ports/outbound/</code> — <code>BaseSecretsProvider</code>, <code>BaseFeatureFlagProvider</code>,
+<code>BaseObjectStore</code> — added to <code>openframe-core</code> by the package proposing
+the capability (e.g. <code>openframe-infra</code>), not defined ad hoc inside that
+package itself. Port <em>contracts</em> belong to <code>openframe-core</code>; only the
+concrete <em>implementations</em> live downstream in <code>openframe-adapters</code> /
+<code>openframe-infra</code>.</p>
 
 
 

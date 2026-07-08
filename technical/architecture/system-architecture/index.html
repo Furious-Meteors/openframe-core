@@ -2245,8 +2245,6 @@
       
         
       
-        
-      
     
     
     
@@ -2346,34 +2344,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -3126,16 +3096,22 @@
 
 <h1 id="system-architecture">System Architecture<a class="headerlink" href="#system-architecture" title="Permanent link">&para;</a></h1>
 <p><code>openframe-core</code> is a pure Python foundation package built around a unified
-port + lifecycle contract layer (ADR-006). <code>contracts/</code> is the apex module
+port + lifecycle contract layer (ADR-006). <code>ports/</code> is the apex module
 — every other module depends on it, directly or transitively — and both
-the outbound (<code>ports</code>) and inbound (<code>inbound</code>) sides of the hexagon are
-first-class citizens of the dependency graph. No module imports from a
-module higher in the chain.</p>
+the outbound (<code>ports/outbound/</code>) and inbound (<code>inbound/</code>) sides of the
+hexagon are first-class citizens of the dependency graph. No module
+imports from a module higher in the chain.</p>
+<p>As of v3.1.0, <code>ports/</code> unifies what were previously two separate
+modules: <code>openframe.core.contracts</code> (the port/lifecycle primitives) and
+<code>openframe.core.ports</code> (the outbound protocols, now internally organised
+under <code>ports/outbound/</code>). See
+<a href="../adrs/adr-006-unified-port-lifecycle/#addendum--contracts-merged-into-ports-outbound-sub-module-introduced-v310">ADR-006's v3.1.0 addendum</a>
+for the full rationale.</p>
 <hr />
 <h2 id="module-dependency-dag">Module Dependency DAG<a class="headerlink" href="#module-dependency-dag" title="Permanent link">&para;</a></h2>
 <p>Every arrow in this diagram is a permitted import direction. No reverse
 imports exist. There is no standalone <code>health</code> node — health is a member
-of <code>contracts</code> (<code>Lifecycle.health()</code> + <code>PluginHealth</code>). There is no
+of <code>ports</code> (<code>Lifecycle.health()</code> + <code>PluginHealth</code>). There is no
 standalone <code>errors</code> node either — the whole error hierarchy (the adapter
 family and the plugin family) lives in the single <code>exceptions</code> package,
 rooted at <code>OpenFrameError</code>. <code>telemetry</code> imports <code>exceptions</code> so its
@@ -3144,8 +3120,7 @@ ever importing telemetry.</p>
 <pre class="mermaid"><code>flowchart LR
     EX["exceptions"]
     CF["config"]
-    CO["contracts"]
-    PO["ports"]
+    PO["ports\n(+ ports/outbound)"]
     IN["inbound"]
     TE["telemetry"]
     TR["tracing"]
@@ -3154,19 +3129,17 @@ ever importing telemetry.</p>
     RT["runtime"]
     TS["testing"]
 
-    EX --&gt; CF --&gt; CO
+    EX --&gt; CF --&gt; PO
     EX --&gt; TE
-    CO --&gt; PO
-    CO --&gt; IN
-    CO --&gt; TE --&gt; TR --&gt; MW
-    CO --&gt; PL --&gt; RT
+    PO --&gt; IN
+    PO --&gt; TE --&gt; TR --&gt; MW
+    PO --&gt; PL --&gt; RT
     TE --&gt; PL
-    CO --&gt; TS
+    PO --&gt; TS
 
     style EX fill:#1a1a1a,color:#F0F0F0,stroke:#6DB33F
     style CF fill:#1a1a1a,color:#F0F0F0,stroke:#6DB33F
-    style CO fill:#1a1a1a,color:#8CC63F,stroke:#6DB33F
-    style PO fill:#141414,color:#F0F0F0,stroke:#4E8A2A
+    style PO fill:#1a1a1a,color:#8CC63F,stroke:#6DB33F
     style IN fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TE fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TR fill:#141414,color:#F0F0F0,stroke:#4E8A2A
@@ -3174,6 +3147,11 @@ ever importing telemetry.</p>
     style PL fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style RT fill:#141414,color:#F0F0F0,stroke:#4E8A2A
     style TS fill:#141414,color:#F0F0F0,stroke:#4E8A2A</code></pre>
+<p><code>ports/outbound/</code> is drawn as part of the <code>ports</code> node, not a sibling —
+it is an internal sub-package (<code>repository.py</code>, <code>producer.py</code>,
+<code>consumer.py</code>, each depending only on <code>ports/port</code>), not a separately
+importable module. Consumers always import from the top-level
+<code>openframe.core.ports</code> package.</p>
 <p>See <a href="../adrs/adr-006-unified-port-lifecycle/">ADR-006</a> for the full
 rationale, and <a href="../capability-taxonomy/">capability-taxonomy.md</a> for the
 <code>Capability</code> enum reference.</p>
@@ -3199,13 +3177,8 @@ rationale, and <a href="../capability-taxonomy/">capability-taxonomy.md</a> for 
 <td><code>pydantic-settings</code></td>
 </tr>
 <tr>
-<td><code>contracts</code></td>
-<td><code>Identity</code>, <code>Lifecycle</code>, <code>BasePort</code>, <code>Capability</code>, <code>PluginStatus</code>, <code>PluginHealth</code>, <code>PluginContext</code>, <code>PrincipalContext</code>, <code>TenantContext</code></td>
-<td>none</td>
-</tr>
-<tr>
 <td><code>ports</code></td>
-<td><code>BaseRepository[T]</code>, <code>BaseProducer[T]</code>, <code>BaseConsumer[T]</code> (each <code>BasePort</code> + domain methods)</td>
+<td><code>Identity</code>, <code>Lifecycle</code>, <code>BasePort</code>, <code>Capability</code>, <code>PluginStatus</code>, <code>PluginHealth</code>, <code>PluginContext</code>, <code>PrincipalContext</code>, <code>TenantContext</code> (primitives) + <code>BaseRepository[T]</code>, <code>BaseProducer[T]</code>, <code>BaseConsumer[T]</code> (outbound protocols, defined in <code>ports/outbound/</code>, each <code>BasePort</code> + domain methods)</td>
 <td>none</td>
 </tr>
 <tr>
@@ -3230,7 +3203,7 @@ rationale, and <a href="../capability-taxonomy/">capability-taxonomy.md</a> for 
 </tr>
 <tr>
 <td><code>plugins</code></td>
-<td><code>PluginRegistry</code> (+ re-exports of <code>contracts</code> types)</td>
+<td><code>PluginRegistry</code> (+ re-exports of <code>ports</code> primitives)</td>
 <td>none</td>
 </tr>
 <tr>
@@ -3247,17 +3220,23 @@ rationale, and <a href="../capability-taxonomy/">capability-taxonomy.md</a> for 
 </table>
 <hr />
 <h2 id="the-hexagon-explicitly">The Hexagon, Explicitly<a class="headerlink" href="#the-hexagon-explicitly" title="Permanent link">&para;</a></h2>
-<p><code>contracts</code> sits at the apex. Two sibling modules hang off it, one per side
-of the hexagon:</p>
+<p><code>ports</code> sits at the apex, and now contains both sides of the hexagon's
+outbound half in one module:</p>
 <ul>
-<li><strong><code>ports</code></strong> — the outbound/driven side. Every port (<code>BaseRepository</code>,
-  <code>BaseProducer</code>, <code>BaseConsumer</code>) is <code>BasePort</code> (<code>Identity</code> + <code>Lifecycle</code>)
-  plus its own domain methods. Adapters implement these structurally.</li>
-<li><strong><code>inbound</code></strong> — the driving side. <code>UseCase</code>/<code>CommandHandler</code>/<code>QueryHandler</code>
-  are invoked by inbound adapters (HTTP routes via <code>TelemetryMiddleware</code>,
-  message handlers, CLI commands) with a <code>RequestContext</code> carrying a
-  correlation id and optional identity.</li>
+<li><strong>Port primitives</strong> (<code>ports/capability.py</code>, <code>context.py</code>, <code>health.py</code>,
+  <code>identity.py</code>, <code>lifecycle.py</code>, <code>port.py</code>) — <code>Identity</code> + <code>Lifecycle</code>
+  compose into <code>BasePort</code>, the base every outbound port and every
+  registrable plugin extends.</li>
+<li><strong><code>ports/outbound/</code></strong> — the outbound/driven side proper. Every
+  capability-specific protocol (<code>BaseRepository</code>, <code>BaseProducer</code>,
+  <code>BaseConsumer</code>) is <code>BasePort</code> plus its own domain methods. Adapters
+  implement these structurally. New outbound capabilities (e.g.
+  <code>BaseSecretsProvider</code> from <code>openframe-infra</code>) are added here.</li>
 </ul>
+<p><code>inbound</code> is the sibling module for the driving side: <code>UseCase</code>/
+<code>CommandHandler</code>/<code>QueryHandler</code> are invoked by inbound adapters (HTTP
+routes via <code>TelemetryMiddleware</code>, message handlers, CLI commands) with a
+<code>RequestContext</code> carrying a correlation id and optional identity.</p>
 <p><code>plugins.PluginRegistry</code> operates directly on <code>BasePort</code> — there is no
 separate plugin protocol. A "plugin" is just a registered <code>BasePort</code>.</p>
 <hr />
@@ -3357,7 +3336,7 @@ from this single module.</p>
 as a dependency inside a Modal function container (or any other Python
 environment) and runs in-process with the application.</p>
 <pre class="mermaid"><code>flowchart TD
-    PyPI["PyPI\nopenframe-core 3.0.0"]
+    PyPI["PyPI\nopenframe-core 3.1.0"]
     Container["Modal function container\npip install openframe-core"]
     App["FastAPI application\nfrom openframe.core.* import ..."]
     OTel["OTLP endpoint\nGrafana Cloud / Honeycomb / Datadog"]

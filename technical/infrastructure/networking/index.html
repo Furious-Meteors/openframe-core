@@ -2184,8 +2184,6 @@
       
         
       
-        
-      
     
     
     
@@ -2285,34 +2283,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -3030,7 +3000,7 @@
 <p>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is absent, no-op providers are installed and no network calls are made.</p>
 <hr />
 <h2 id="adapter-networking">Adapter Networking<a class="headerlink" href="#adapter-networking" title="Permanent link">&para;</a></h2>
-<p>Adapter packages (<code>openframe-adapters-*</code>) manage their own connections. <code>openframe-core</code> provides the <code>Lifecycle</code> contract in <code>contracts/</code> — specifically <code>Lifecycle.health() -&gt; PluginHealth</code> — that adapters implement for connection verification. <code>PluginRegistry</code> calls <code>health()</code> during and after <code>initialize_all()</code>. <code>openframe-core</code> does not own any connection lifecycle itself.</p>
+<p>Adapter packages (<code>openframe-adapters-*</code>) manage their own connections. <code>openframe-core</code> provides the <code>Lifecycle</code> contract in <code>ports/</code> — specifically <code>Lifecycle.health() -&gt; PluginHealth</code> — that adapters implement for connection verification. <code>PluginRegistry</code> calls <code>health()</code> during and after <code>initialize_all()</code>. <code>openframe-core</code> does not own any connection lifecycle itself.</p>
 
 
 

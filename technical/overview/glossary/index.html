@@ -2349,8 +2349,6 @@
       
         
       
-        
-      
     
     
     
@@ -2450,34 +2448,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -3343,23 +3313,23 @@
 <h2 id="b">B<a class="headerlink" href="#b" title="Permanent link">&para;</a></h2>
 <p><strong>BaseAdapterSettings</strong> — the Pydantic <code>BaseSettings</code> subclass that every adapter's settings class inherits from. Reads fields from environment variables at instantiation time.</p>
 <p><strong>BaseConsumer[T]</strong> — the generic <code>runtime_checkable</code> Protocol for message queue consumer adapters. Extends <code>BasePort</code>. Methods: <code>subscribe</code>, <code>ack</code>, <code>nack</code>, <code>close</code> plus identity/lifecycle from <code>BasePort</code>.</p>
-<p><strong>BasePort</strong> — the single unified base for every outbound port and every registrable plugin. Composes <code>Identity</code> (<code>name</code>/<code>version</code>/<code>capability</code>) and <code>Lifecycle</code> (<code>initialize</code>/<code>shutdown</code>/<code>health</code>). Defined in <code>openframe.core.contracts</code>.</p>
+<p><strong>BasePort</strong> — the single unified base for every outbound port and every registrable plugin. Composes <code>Identity</code> (<code>name</code>/<code>version</code>/<code>capability</code>) and <code>Lifecycle</code> (<code>initialize</code>/<code>shutdown</code>/<code>health</code>). Defined in <code>openframe.core.ports</code>.</p>
 <p><strong>BaseProducer[T]</strong> — the generic <code>runtime_checkable</code> Protocol for message queue producer adapters. Extends <code>BasePort</code>. Methods: <code>publish</code>, <code>publish_batch</code>, <code>close</code> plus identity/lifecycle from <code>BasePort</code>.</p>
 <p><strong>BaseRepository[T]</strong> — the generic <code>runtime_checkable</code> Protocol for persistence adapters. Extends <code>BasePort</code>. Methods: <code>get</code>, <code>list</code>, <code>create</code>, <code>update</code>, <code>delete</code> plus identity/lifecycle from <code>BasePort</code>.</p>
 <h2 id="c">C<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p><strong>Capability</strong> — a closed <code>str</code> <code>Enum</code> (<code>PERSISTENCE</code>, <code>CACHE</code>, <code>QUEUE</code>, <code>SECRETS</code>, <code>FLAGS</code>, <code>STORAGE</code>, <code>TRANSPORT</code>, <code>INFERENCE</code>, <code>EMBEDDING</code>, <code>SCHEDULE</code>, <code>SEARCH</code>) that every <code>BasePort</code> declares as its <code>capability</code> attribute. <code>PluginRegistry.get()</code>/<code>get_all()</code> take a <code>Capability</code> member, not a raw string. See <a href="../../architecture/capability-taxonomy/">capability-taxonomy.md</a>.</p>
 <p><strong>CommandHandler[TIn]</strong> — a driving-side contract in <code>openframe.core.inbound</code> for CQRS-flavoured command handling. Has a single <code>execute(command, context)</code> method that returns <code>None</code>.</p>
 <h2 id="d">D<a class="headerlink" href="#d" title="Permanent link">&para;</a></h2>
-<p><strong>Dependency order</strong> — the rule inside <code>openframe-core</code> that modules may only import from modules lower in the DAG: <code>exceptions</code> → <code>config</code> → <code>contracts</code> → <code>ports</code> / <code>inbound</code> / <code>telemetry</code> → <code>tracing</code> → <code>middleware</code> → <code>plugins</code> → <code>runtime</code>. Circular imports are a build failure. There is no standalone <code>health</code> node — health is part of <code>contracts</code> (<code>Lifecycle.health()</code>).</p>
+<p><strong>Dependency order</strong> — the rule inside <code>openframe-core</code> that modules may only import from modules lower in the DAG: <code>exceptions</code> → <code>config</code> → <code>ports</code> → <code>inbound</code> / <code>telemetry</code> → <code>tracing</code> → <code>middleware</code> → <code>plugins</code> → <code>runtime</code>. Circular imports are a build failure. There is no standalone <code>health</code> node — health is part of <code>ports</code> (<code>Lifecycle.health()</code>).</p>
 <h2 id="e">E<a class="headerlink" href="#e" title="Permanent link">&para;</a></h2>
 <p><strong>ErrorCode</strong> — a <code>StrEnum</code> in <code>openframe.core.exceptions</code> enumerating the <code>domain.kind</code> codes owned by <code>openframe-core</code> (e.g. <code>adapter.connection</code>, <code>plugin.initialization</code>). Downstream packages declare their own codes without extending <code>ErrorCode</code>.</p>
 <h2 id="h">H<a class="headerlink" href="#h" title="Permanent link">&para;</a></h2>
 <p><strong>Hexagonal architecture</strong> — the architectural pattern enforced across all OpenFrame templates. Business logic lives in <code>core/</code> and has no knowledge of infrastructure. Adapters translate between <code>core/</code> ports and external systems. Also called Ports and Adapters.</p>
 <h2 id="i">I<a class="headerlink" href="#i" title="Permanent link">&para;</a></h2>
-<p><strong>Identity</strong> — a <code>Protocol</code> in <code>openframe.core.contracts</code> with three attributes: <code>name: str</code>, <code>version: str</code>, <code>capability: Capability</code>. Composes with <code>Lifecycle</code> to form <code>BasePort</code>.</p>
+<p><strong>Identity</strong> — a <code>Protocol</code> in <code>openframe.core.ports</code> with three attributes: <code>name: str</code>, <code>version: str</code>, <code>capability: Capability</code>. Composes with <code>Lifecycle</code> to form <code>BasePort</code>.</p>
 <p><strong>Inbound</strong> — the driving side of the hexagon, modelled in <code>openframe.core.inbound</code>. <code>UseCase</code>, <code>CommandHandler</code>, and <code>QueryHandler</code> are invoked by inbound adapters (HTTP routes, message handlers, CLI) with a <code>RequestContext</code>.</p>
 <h2 id="l">L<a class="headerlink" href="#l" title="Permanent link">&para;</a></h2>
-<p><strong>Lifecycle</strong> — a <code>Protocol</code> in <code>openframe.core.contracts</code> with three methods: <code>async initialize(context: PluginContext) -&gt; None</code>, <code>async shutdown() -&gt; None</code>, <code>async health() -&gt; PluginHealth</code>. Health is exclusively <code>Lifecycle.health()</code> — there is no separate <code>HealthCheck</code> protocol.</p>
+<p><strong>Lifecycle</strong> — a <code>Protocol</code> in <code>openframe.core.ports</code> with three methods: <code>async initialize(context: PluginContext) -&gt; None</code>, <code>async shutdown() -&gt; None</code>, <code>async health() -&gt; PluginHealth</code>. Health is exclusively <code>Lifecycle.health()</code> — there is no separate <code>HealthCheck</code> protocol.</p>
 <p><strong>Lifecycle event</strong> — a named counter increment recorded via <code>record_lifecycle_event(event_name)</code>. <code>"cold_start"</code> is the most common value, called from Modal template <code>@enter</code> hooks.</p>
 <h2 id="m">M<a class="headerlink" href="#m" title="Permanent link">&para;</a></h2>
 <p><strong>Meta-package</strong> — a published Python package with no code, only dependency declarations. <code>openframe-adapters</code> is a meta-package whose optional extras (<code>[postgres]</code>, <code>[redis]</code>, <code>[all]</code>) pull in individual adapter packages.</p>
@@ -3373,9 +3343,9 @@
 <p><strong>OTLP</strong> — OpenTelemetry Protocol. The wire format used to export traces and metrics to a backend (Grafana Cloud, Honeycomb, Datadog, etc.). Configured via <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> and <code>OTEL_EXPORTER_OTLP_HEADERS</code>.</p>
 <h2 id="p">P<a class="headerlink" href="#p" title="Permanent link">&para;</a></h2>
 <p><strong>Plugin</strong> — in v3, a "plugin" is simply a registered <code>BasePort</code>. There is no separate plugin protocol. Any <code>BasePort</code> (i.e. any <code>BaseRepository</code>, <code>BaseProducer</code>, or <code>BaseConsumer</code>) can be registered in <code>PluginRegistry</code> without additional wrapper code.</p>
-<p><strong>PluginHealth</strong> — a dataclass in <code>openframe.core.contracts</code> returned by <code>Lifecycle.health()</code>. Carries <code>status: PluginStatus</code>, <code>message: str | None</code>, and <code>details: dict[str, Any]</code>.</p>
+<p><strong>PluginHealth</strong> — a dataclass in <code>openframe.core.ports</code> returned by <code>Lifecycle.health()</code>. Carries <code>status: PluginStatus</code>, <code>message: str | None</code>, and <code>details: dict[str, Any]</code>.</p>
 <p><strong>PluginRegistry</strong> — the managed registry in <code>openframe.core.plugins</code>. Accepts any <code>BasePort</code>, initialises in registration order, shuts down in LIFO order, and looks up by <code>Capability</code> enum member. <code>get()</code> is strict — raises <code>AmbiguousCapabilityError</code> on &gt;1 match.</p>
-<p><strong>PluginStatus</strong> — an enum in <code>openframe.core.contracts</code> with values <code>READY</code>, <code>DEGRADED</code>, <code>UNAVAILABLE</code>.</p>
+<p><strong>PluginStatus</strong> — an enum in <code>openframe.core.ports</code> with values <code>READY</code>, <code>DEGRADED</code>, <code>UNAVAILABLE</code>.</p>
 <p><strong>Port</strong> — an abstract interface defined as a Python <code>Protocol</code> in <code>openframe-core</code>. Ports define <em>what</em> the contract is; adapters define <em>how</em> it is fulfilled for a specific backend. Every port in v3 is a <code>BasePort</code> — identity-aware and lifecycle-aware.</p>
 <p><strong>Protocol</strong> — a Python structural subtyping mechanism (<code>typing.Protocol</code>). A class satisfies a Protocol if it has matching method signatures — no inheritance required. All ports in <code>openframe-core</code> are <code>runtime_checkable</code> Protocols.</p>
 <h2 id="q">Q<a class="headerlink" href="#q" title="Permanent link">&para;</a></h2>

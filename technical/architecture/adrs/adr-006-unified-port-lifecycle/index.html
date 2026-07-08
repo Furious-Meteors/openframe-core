@@ -1379,6 +1379,56 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#addendum-contracts-merged-into-ports-outbound-sub-module-introduced-v310" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Addendum — contracts/ merged into ports/, outbound/ sub-module introduced (v3.1.0)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Addendum — contracts/ merged into ports/, outbound/ sub-module introduced (v3.1.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#context_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decision_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consequences_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2273,8 +2323,6 @@
       
         
       
-        
-      
     
     
     
@@ -2374,34 +2422,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -3073,6 +3093,56 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#addendum-contracts-merged-into-ports-outbound-sub-module-introduced-v310" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Addendum — contracts/ merged into ports/, outbound/ sub-module introduced (v3.1.0)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Addendum — contracts/ merged into ports/, outbound/ sub-module introduced (v3.1.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#context_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decision_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consequences_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3212,7 +3282,7 @@
 <p>Three contract families for what is conceptually one idea — "a thing with an identity, that can be started, stopped, and asked if it's healthy, and that does some domain-specific work" — is unnecessary duplication. It also means capability lookups in the registry are keyed on a raw <code>str</code> (<code>plugin.capability == "persistence"</code>), with no static or runtime guarantee that adapters agree on the vocabulary.</p>
 <p>The driving side of the hexagon (use cases, command/query handlers invoked by inbound adapters — HTTP routes, message handlers, CLI commands) had no first-class representation at all. <code>openframe-core</code> only modeled the driven/outbound side (<code>ports/</code>).</p>
 <h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
-<p>Replace all three contract families with <strong>one unified contract layer</strong>, <code>openframe/core/contracts/</code>, built from two small, composable primitives:</p>
+<p>Replace all three contract families with <strong>one unified contract layer</strong>, <code>openframe/core/contracts/</code> (merged into <code>openframe/core/ports/</code> in v3.1.0 — see the addendum below), built from two small, composable primitives:</p>
 <ul>
 <li><strong><code>Identity</code></strong> — <code>name: str</code>, <code>version: str</code>, <code>capability: Capability</code>. What a thing <em>is</em>.</li>
 <li><strong><code>Lifecycle</code></strong> — <code>async initialize(context: PluginContext) -&gt; None</code>, <code>async shutdown() -&gt; None</code>, <code>async health() -&gt; PluginHealth</code>. How a thing is <em>managed</em>. <code>health()</code> is the single, canonical health primitive — it absorbs the old <code>HealthCheck.ping()</code> (cheap liveness) and <code>HealthCheck.is_ready()</code> (full readiness) into one call that returns a rich <code>PluginHealth</code> snapshot (<code>PluginStatus</code> + message + details) instead of two independent bare <code>bool</code>s. An adapter that wants to distinguish liveness from readiness encodes that distinction in <code>PluginStatus</code> and <code>PluginHealth.details</code>, not in a second method.</li>
@@ -3290,6 +3360,83 @@ conceptually siblings.</p>
 <li><code>to_dict()</code>/<code>from_dict()</code> serialisation for cross-service propagation. The
   fields are laid out to be serialisation-ready; the methods are added when the
   <code>protocol</code>/<code>client</code> packages need them (a non-breaking addition).</li>
+</ul>
+<hr />
+<h2 id="addendum-contracts-merged-into-ports-outbound-sub-module-introduced-v310">Addendum — contracts/ merged into ports/, outbound/ sub-module introduced (v3.1.0)<a class="headerlink" href="#addendum-contracts-merged-into-ports-outbound-sub-module-introduced-v310" title="Permanent link">&para;</a></h2>
+<h3 id="context_2">Context<a class="headerlink" href="#context_2" title="Permanent link">&para;</a></h3>
+<p><code>openframe.core.contracts</code> (the port/lifecycle primitives: <code>Identity</code>,
+<code>Lifecycle</code>, <code>BasePort</code>, <code>Capability</code>, <code>PluginStatus</code>/<code>PluginHealth</code>/
+<code>PluginContext</code>, <code>PrincipalContext</code>/<code>TenantContext</code>) and
+<code>openframe.core.ports</code> (the outbound protocols: <code>BaseRepository</code>,
+<code>BaseProducer</code>, <code>BaseConsumer</code>) were two directories for what this ADR
+already establishes as one concept — the port contract layer of the
+hexagonal architecture. Every outbound protocol extends <code>BasePort</code>
+directly; keeping the primitives and the protocols that compose them in
+two separate top-level modules was an arbitrary split, not a meaningful
+boundary.</p>
+<p>Separately, <code>BaseRepository</code>/<code>BaseProducer</code>/<code>BaseConsumer</code> are
+capability-specific outbound port protocols — what you get when the
+<code>BasePort</code> primitives are applied to one outbound capability. They are
+not implementations (those live in <code>openframe-adapters</code>), and sitting
+as three loose files directly inside <code>ports/</code> gave them no distinct
+identity from the primitive modules they are built on, and no clear
+intake point for future capability-specific protocols
+(<code>BaseSecretsProvider</code>, <code>BaseObjectStore</code>, <code>BaseFeatureFlagProvider</code>
+from <code>openframe-infra</code>).</p>
+<h3 id="decision_2">Decision<a class="headerlink" href="#decision_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Merge <code>contracts/</code> into <code>ports/</code>.</strong> All six primitive modules
+  (<code>capability.py</code>, <code>context.py</code>, <code>health.py</code>, <code>identity.py</code>,
+  <code>lifecycle.py</code>, <code>port.py</code>) move into <code>openframe/core/ports/</code>. A single
+  <code>ports/__init__.py</code> exports everything previously split across the two
+  <code>__init__.py</code> files.</li>
+<li><strong>Introduce <code>ports/outbound/</code>.</strong> The three existing outbound protocol
+  modules (<code>repository.py</code>, <code>producer.py</code>, <code>consumer.py</code>) move into a new
+  <code>openframe/core/ports/outbound/</code> sub-package, mirroring the existing
+  <code>openframe/core/inbound/</code> on the driving side of the hexagon. The name
+  <code>outbound/</code> (not <code>protocols/</code>, not <code>implementations/</code>) matches the
+  hexagonal vocabulary already in use, gives a clear intake rule for
+  future capability-specific outbound protocols, and is honest about
+  what these are — port contracts, not implementations.</li>
+<li><strong>No compatibility shim.</strong> Consistent with this ADR's "one contract
+  family, one canonical home per concept" principle (see "Alternatives
+  considered" above), <code>openframe/core/contracts/</code> is deleted outright —
+  no re-export module is left at the old path.</li>
+<li><strong>No class is renamed and no method signature changes.</strong> This is a
+  pure structural rename and merge; every name importable from
+  <code>openframe.core.contracts</code> before v3.1.0 is importable from
+  <code>openframe.core.ports</code> after it. <code>BaseRepository</code>, <code>BaseProducer</code>, and
+  <code>BaseConsumer</code> remain importable from the top-level
+  <code>openframe.core.ports</code> package — the <code>outbound/</code> sub-module is an
+  internal reorganisation, not a public API change.</li>
+</ul>
+<h3 id="consequences_1">Consequences<a class="headerlink" href="#consequences_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Dependency DAG simplifies.</strong> <code>ports</code> is now the single apex module
+  (after <code>exceptions → config</code>) that <code>inbound</code> and <code>plugins</code> depend on
+  directly, rather than both depending on a separate <code>contracts</code> module
+  that <code>ports</code> also depended on. Within <code>ports/</code>, the six primitive
+  modules form one linear chain and the three <code>ports/outbound/</code> modules
+  each depend only on <code>ports/port</code> — a clean two-tier structure, not a
+  new cycle.</li>
+<li><strong><code>ports/outbound/</code> has a stated intake rule.</strong> Any future
+  capability-specific outbound port protocol belongs in
+  <code>ports/outbound/</code>, re-exported from <code>ports/__init__.py</code> — not as a
+  new top-level <code>ports/</code> module, and not defined inside the downstream
+  package that first needs it. See
+  <a href="../../capability-taxonomy/#where-capability-specific-outbound-port-protocols-live">capability-taxonomy.md</a>.</li>
+<li><strong>Shipped as a minor version, not a major one.</strong> Version bumps
+  <code>3.0.1</code> → <code>3.1.0</code> in <code>pyproject.toml</code> — this is judged a structural
+  reorganisation of the v3.0.0 contract layer rather than a further
+  architectural change, so it does not warrant its own major version.
+  Unlike the v3.0.0 break, <code>openframe-adapters</code> and other ecosystem
+  packages pinned <code>openframe-core&gt;=3.0,&lt;4</code> <strong>will</strong> auto-resolve to
+  3.1.0 on their next install. Because there is still no compatibility
+  shim at the old <code>openframe.core.contracts</code> path, any package importing
+  from it will fail immediately on upgrade — downstream packages still
+  importing <code>openframe.core.contracts</code> must migrate to
+  <code>openframe.core.ports</code> before taking a <code>openframe-core</code> upgrade past
+  3.1.0, even though semver alone would not have warned them.</li>
 </ul>
 
 

@@ -717,6 +717,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v300-unified-port-lifecycle-contract-breaking" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2256,8 +2267,6 @@
       
         
       
-        
-      
     
     
     
@@ -2357,34 +2366,6 @@
     
   
     config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../code/modules/contracts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    contracts
   
 
     
@@ -3007,6 +2988,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v300-unified-port-lifecycle-contract-breaking" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3180,20 +3172,30 @@
 </ul>
 <hr />
 <h2 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h2>
+<h2 id="v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking">v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)<a class="headerlink" href="#v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>Ecosystem packages pin <code>openframe-core&gt;=3.0,&lt;4</code>.</p>
+</blockquote>
+<ul>
+<li><code>openframe.core.contracts</code> renamed to <code>openframe.core.ports</code>. All names previously importable from <code>openframe.core.contracts</code> are now importable from <code>openframe.core.ports</code>. No compatibility shim — update all imports.</li>
+<li><code>openframe.core.ports</code> now exports both the port primitives (<code>BasePort</code>, <code>Capability</code>, <code>Identity</code>, <code>Lifecycle</code>, <code>PluginStatus</code>, <code>PluginHealth</code>, <code>PluginContext</code>, <code>PrincipalContext</code>, <code>TenantContext</code>) and the outbound protocols (<code>BaseRepository</code>, <code>BaseProducer</code>, <code>BaseConsumer</code>) from a single unified module.</li>
+<li><code>BaseRepository</code>, <code>BaseProducer</code>, <code>BaseConsumer</code> moved into a new <code>openframe/core/ports/outbound/</code> sub-module, mirroring <code>openframe/core/inbound/</code> on the driving side of the hexagon. The public API is unchanged — <code>from openframe.core.ports import BaseRepository</code> still works; the explicit sub-module path is now <code>from openframe.core.ports.outbound import BaseRepository</code>. Future capability-specific outbound protocols (<code>BaseSecretsProvider</code>, <code>BaseObjectStore</code>, <code>BaseFeatureFlagProvider</code> from <code>openframe-infra</code>) will be added to <code>ports/outbound/</code>.</li>
+</ul>
+<hr />
 <h2 id="v300-unified-port-lifecycle-contract-breaking">v3.0.0 — Unified Port + Lifecycle Contract (breaking)<a class="headerlink" href="#v300-unified-port-lifecycle-contract-breaking" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Full migration guide: <a href="../../architecture/adrs/adr-006-unified-port-lifecycle/">ADR-006</a>. Ecosystem packages pin <code>openframe-core&gt;=3.0,&lt;4</code>.</p>
 </blockquote>
 <p><strong>Removed:</strong></p>
 <ul>
-<li><code>openframe.core.health</code> — <code>HealthCheck</code> Protocol (<code>ping()</code>/<code>is_ready()</code>) deleted. Health is now <code>Lifecycle.health() -&gt; PluginHealth</code> in <code>openframe.core.contracts</code>.</li>
+<li><code>openframe.core.health</code> — <code>HealthCheck</code> Protocol (<code>ping()</code>/<code>is_ready()</code>) deleted. Health is now <code>Lifecycle.health() -&gt; PluginHealth</code> in <code>openframe.core.ports</code>.</li>
 <li><code>openframe.core.plugins.contracts</code> / <code>OpenFramePlugin</code> — deleted. A plugin is now just a registered <code>BasePort</code>. No separate plugin protocol exists.</li>
 <li><code>openframe.core.errors</code> — the <code>PluginError</code> family moved into <code>openframe.core.exceptions</code> under the new <code>OpenFrameError</code> root. No deprecated aliases.</li>
 <li>Pre-v3 lifecycle-free ports — <code>BaseRepository</code>, <code>BaseProducer</code>, <code>BaseConsumer</code> no longer exist as bare domain-method-only Protocols; rebuilt on <code>BasePort</code>.</li>
 </ul>
 <p><strong>Added:</strong></p>
 <ul>
-<li><code>openframe.core.contracts</code> — apex module: <code>Identity</code>, <code>Lifecycle</code>, <code>BasePort</code> (<code>@runtime_checkable</code>), <code>Capability</code> (closed <code>str</code> enum), <code>PluginStatus</code>, <code>PluginHealth</code>, <code>PluginContext</code>, <code>PrincipalContext</code>, <code>TenantContext</code>.</li>
+<li><code>openframe.core.contracts</code> <em>(merged into <code>openframe.core.ports</code> in v3.1.0 — see below)</em> — apex module: <code>Identity</code>, <code>Lifecycle</code>, <code>BasePort</code> (<code>@runtime_checkable</code>), <code>Capability</code> (closed <code>str</code> enum), <code>PluginStatus</code>, <code>PluginHealth</code>, <code>PluginContext</code>, <code>PrincipalContext</code>, <code>TenantContext</code>.</li>
 <li><code>openframe.core.inbound</code> — driving side of the hexagon: <code>UseCase[TIn, TOut]</code>, <code>CommandHandler[TIn]</code>, <code>QueryHandler[TIn, TOut]</code>, <code>RequestContext</code>.</li>
 <li><code>openframe.core.exceptions.OpenFrameError</code> — single root for all ecosystem exceptions. <code>ErrorCode</code> and <code>Severity</code> <code>StrEnum</code>s. <code>AdapterError</code> and <code>PluginError</code> families re-parented under it.</li>
 <li><code>openframe.core.telemetry.record_error()</code> — structured error→span recording seam. Called at <code>TracingProxy</code>, <code>TelemetryMiddleware</code>, and <code>PluginRegistry</code> boundary seams.</li>
