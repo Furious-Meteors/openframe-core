@@ -17,12 +17,7 @@
   <a href="https://github.com/Furious-Meteors/openframe-core/blob/production/.github/CHANGELOG.md">Changelog</a>
 </p>
 
----
-
 `openframe-core` is the foundation package of the OpenFrame Microservice Development Suite. It defines the structural contracts, telemetry primitives, and shared utilities that every other package in the ecosystem depends on.
-
-Every package in the OpenFrame ecosystem pins `openframe-core>=3.0,<4`. The major version is the stability contract for the entire ecosystem.
----
 
 ## What's inside
 

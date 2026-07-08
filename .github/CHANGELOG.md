@@ -58,6 +58,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v3.2.0
+
+### Added
+
+- `openframe.core.testing.fakes.inbound` — three in-memory test
+  doubles for the inbound contracts: `EchoUseCase`,
+  `SpyCommandHandler`, `SpyQueryHandler`. Mirror of the outbound
+  fakes (`InMemoryRepository`, `FakeProducer`, `FakeConsumer`).
+- `openframe.core.testing.contracts.inbound` — three inheritable
+  pytest base classes: `UseCaseContractTests`,
+  `CommandHandlerContractTests`, `QueryHandlerContractTests`.
+  Any application service or validation-framework service
+  implementing these protocols can prove conformance by inheriting
+  the relevant class.
+- All six new names exported from `openframe.core.testing`
+  top-level for consistent import ergonomics.
+
+---
+
 ## v3.1.0
 
 ### Breaking changes
