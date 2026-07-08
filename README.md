@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/images/banner.png" alt="openframe-core" width="100%" />
+  <img src="https://raw.githubusercontent.com/Furious-Meteors/openframe-core/production/docs/assets/images/banner.png" alt="openframe-core" width="100%" />
 </p>
 
 <p align="center">
