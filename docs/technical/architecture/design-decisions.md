@@ -54,41 +54,43 @@ Non-obvious architectural decisions made during the design and review process. F
 
 ---
 
-## Three Application Wiring Options (unresolved, watch)
+## Three Application Wiring Options (resolved)
 
-Three wiring patterns now coexist in `openframe-core`:
+**Resolved** by consolidating to one class, `ApplicationBootstrap`, at
+three levels of ceremony, rather than three separate named patterns:
 
-1. **`deps.py` + `lru_cache`** — module-level cached factory functions.
-   Simple, familiar, no framework. Most existing templates use this.
-2. **`PluginRegistry` direct** — explicit registry construction and
-   `initialize_all()` call in a `lifespan` handler. Full control, no
-   abstraction layer.
-3. **`ApplicationBootstrap`** — subclass-based composition root. Manages
-   the `PluginRegistry` internally and adds `configure()` → `start()` →
-   `stop()` lifecycle.
+1. **`ApplicationBootstrap.compose(*ports)`** — no subclass. The default
+   for a service with one or a few ports that don't need per-port
+   `config`/`init_timeout`.
+2. **Subclass + `configure()`** — once a port needs `config=`,
+   `init_timeout=`, or registration order that depends on a runtime
+   condition.
+3. **`bootstrap.registry`** — the escape hatch, exposing the underlying
+   `PluginRegistry` directly for what tiers 1-2 don't cover (e.g.
+   `get_all()` for an intentional multi-port-per-capability setup,
+   `list_plugins()`).
 
-The ambiguity is better than before — `ApplicationBootstrap` has a name,
-a docstring, and the correct `stop()` behaviour (port shutdown +
-`shutdown_telemetry()`). But it is still three options without a clear
-hierarchy.
+What this replaced: `PluginRegistry` direct usage was previously
+documented as a competing pattern in its own right, mainly because
+`ApplicationBootstrap` had no `get_all()` and required a subclass even
+for a single port. Both gaps are now closed — `get_all()` was added to
+`ApplicationBootstrap`, and `compose()` covers the single/few-port case
+without a subclass. `deps.py` + `lru_cache` was never actually a
+`PluginRegistry`-integrated pattern (it typically skips calling
+`initialize()`/`shutdown()`/`health()` entirely) — it's no longer
+documented as a peer alternative; a service with zero real ports simply
+doesn't need a composition root at all, which is a different situation
+from "choosing between three wiring options."
 
-**The risk:** if the docs don't establish `ApplicationBootstrap` as the
-recommended path — with the other two documented as deliberate
-alternatives and the conditions under which you'd choose each — the
-ambiguity just gets more documented rather than actually resolved. A new
-adapter author reads the code and sees three equivalent-looking patterns
-with no signal about which to start from.
+`PluginRegistry` remains constructible directly for the one case that
+genuinely needs it: building a different composition root on top of
+`openframe-core`, not writing application code.
 
-**The resolution path:** update the developer guide and the runtime module
-doc to name `ApplicationBootstrap` as the default starting point, and
-explain the two alternatives as escape hatches:
-
-- Use `PluginRegistry` directly when you need fine-grained control over
-  initialization order or want to avoid the subclass pattern.
-- Use `deps.py` + `lru_cache` when you're wiring a single port without a
-  full startup/shutdown lifecycle (e.g. a simple stateless function).
-
-This is tracked in the roadmap as a documentation task.
+Updated: `openframe/core/runtime/bootstrap.py`'s module and class
+docstrings, `docs/developer-guide/quick-start/index.md`,
+`docs/developer-guide/how-it-works.md` (new "Choosing a Wiring Pattern"
+section), `docs/developer-guide/explore.md`, `docs/developer-guide/debugging.md`,
+`docs/code/modules/runtime.md`.
 
 ---
 

@@ -79,7 +79,7 @@ Called by `PluginRegistry.shutdown_all()` in LIFO order. Should flush, close con
 
 #### `health()`
 
-Return a liveness/readiness snapshot. Must never raise — return `PluginHealth(status=PluginStatus.UNAVAILABLE, message=...)` on any failure.
+Return a liveness/readiness snapshot. Must never raise — return `PluginHealth(status=PluginStatus.FAILED, message=...)` on any failure.
 
 **Returns:** `PluginHealth`
 
@@ -144,11 +144,18 @@ See [capability-taxonomy.md](../../technical/architecture/capability-taxonomy.md
 ### `PluginStatus`
 
 ```python
-class PluginStatus(str, Enum):
-    READY       = "ready"
-    DEGRADED    = "degraded"
-    UNAVAILABLE = "unavailable"
+class PluginStatus(Enum):
+    DISCOVERED  = auto()
+    REGISTERED  = auto()
+    CONFIGURED  = auto()
+    INITIALIZED = auto()
+    READY       = auto()
+    STOPPING    = auto()
+    STOPPED     = auto()
+    FAILED      = auto()
 ```
+
+Lifecycle status values a port/plugin transitions through during application startup and shutdown; the registry tracks the last known state. There is no separate "degraded" or "unavailable" member — a health check that cannot confirm full health reports `FAILED` and encodes the nuance in `PluginHealth.message`/`.details`.
 
 ---
 
@@ -158,11 +165,11 @@ class PluginStatus(str, Enum):
 @dataclass(frozen=True)
 class PluginHealth:
     status: PluginStatus
-    message: str | None = None
+    message: str = ""
     details: dict[str, Any] = field(default_factory=dict)
 ```
 
-Returned by `Lifecycle.health()`. Carries a status, an optional human-readable message, and optional structured detail (e.g. latency, schema checks).
+Returned by `Lifecycle.health()`. Carries a status, a human-readable message (empty string by default, not `None`), and optional structured detail (e.g. latency, schema checks). Frozen — safe to cache and pass across coroutines.
 
 ```python
 # Minimal
@@ -174,12 +181,16 @@ PluginHealth(
     details={"ping_ms": 2.1, "schema_ok": True},
 )
 
-# Degraded
+# Degraded but still serving — no separate status exists; encode the
+# nuance in message/details while status stays READY
 PluginHealth(
-    status=PluginStatus.DEGRADED,
+    status=PluginStatus.READY,
     message="replica lag 5s",
     details={"lag_s": 5},
 )
+
+# Failed
+PluginHealth(status=PluginStatus.FAILED, message=str(exc))
 ```
 
 ---
@@ -189,12 +200,13 @@ PluginHealth(
 ```python
 @dataclass(frozen=True)
 class PluginContext:
-    config: dict[str, Any] = field(default_factory=dict)
+    config: Mapping[str, Any]
+    plugin_name: str
     principal: PrincipalContext | None = None
     tenant: TenantContext | None = None
 ```
 
-Passed to `Lifecycle.initialize()` by `PluginRegistry.initialize_all()`. Carries the port's config dict plus optional identity/tenancy context.
+Passed to `Lifecycle.initialize()` by `PluginRegistry.initialize_all()`. Carries the port's own validated config (a read-only mapping — an empty one when no config was registered for this port), the port's registered `name`, and optional identity/tenancy context. Intentionally narrow on cross-port dependencies — a port cannot look up other ports from this context; the registry must order registrations so dependency ports initialize first.
 
 ---
 
@@ -204,11 +216,11 @@ Passed to `Lifecycle.initialize()` by `PluginRegistry.initialize_all()`. Carries
 @dataclass(frozen=True)
 class PrincipalContext:
     principal_id: str
-    roles: frozenset[str] = field(default_factory=frozenset)
-    attributes: dict[str, Any] = field(default_factory=dict)
+    roles: tuple[str, ...] = ()
+    claims: dict[str, object] = field(default_factory=dict)
 ```
 
-Frozen dataclass carrying caller identity. Threaded through both `PluginContext` (outbound init) and `RequestContext` (inbound requests).
+Frozen dataclass carrying caller identity (user, service account, API key). `roles` is empty when the caller has no roles or role information is unavailable; `claims` carries additional verified claims from the auth token/session (e.g. `{"email": "...", "org": "..."}`). Threaded through both `PluginContext` (outbound init) and `RequestContext` (inbound requests).
 
 ---
 
@@ -218,10 +230,10 @@ Frozen dataclass carrying caller identity. Threaded through both `PluginContext`
 @dataclass(frozen=True)
 class TenantContext:
     tenant_id: str
-    attributes: dict[str, Any] = field(default_factory=dict)
+    name: str = ""
 ```
 
-Frozen dataclass carrying tenant identity. Threaded through both `PluginContext` and `RequestContext`.
+Frozen dataclass carrying tenant identity — `name` is empty when only the identifier is known. Threaded through both `PluginContext` and `RequestContext`.
 
 ---
 
@@ -415,7 +427,7 @@ class PostgresItemRepository:
             await self._pool.fetchval("SELECT 1")
             return PluginHealth(status=PluginStatus.READY)
         except Exception as exc:
-            return PluginHealth(status=PluginStatus.UNAVAILABLE, message=str(exc))
+            return PluginHealth(status=PluginStatus.FAILED, message=str(exc))
 
     # Domain methods
     async def get(self, entity_id: str) -> Item | None: ...

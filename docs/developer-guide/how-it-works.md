@@ -79,7 +79,7 @@ class PostgresRepository:
 
 ## PluginRegistry: Managed Lifecycle
 
-`PluginRegistry` initialises ports in order, shuts them down in reverse, and provides type-safe `Capability` lookups. A "plugin" is just a registered `BasePort`.
+`PluginRegistry` is the underlying engine: it initialises ports in order, shuts them down in reverse, and provides type-safe `Capability` lookups. A "plugin" is just a registered `BasePort`. Application code doesn't usually construct a `PluginRegistry` directly — see [Choosing a Wiring Pattern](#choosing-a-wiring-pattern) below — but this is the mechanism `ApplicationBootstrap` wraps:
 
 ```python
 registry = PluginRegistry()
@@ -89,6 +89,50 @@ await registry.initialize_all()            # calls repo.initialize(PluginContext
 repo = registry.get(Capability.PERSISTENCE)   # strict Capability enum lookup
 traced_repo = TracingProxy(repo, prefix="repository.item")
 ```
+
+---
+
+## Choosing a Wiring Pattern
+
+`ApplicationBootstrap` is the single recommended composition root, at three levels of ceremony — not three competing patterns:
+
+1. **`ApplicationBootstrap.compose(*ports)`** — no subclass. The default
+   for a service with one or a few ports that don't need per-port
+   `config`/`init_timeout`:
+
+   ```python
+   async with ApplicationBootstrap.compose(PostgresRepository(settings)) as app:
+       repo = app.get(Capability.PERSISTENCE)
+   ```
+
+2. **Subclass + `configure()`** — once a port needs `config=`,
+   `init_timeout=`, or registration order that depends on a runtime
+   condition:
+
+   ```python
+   class MyApp(ApplicationBootstrap):
+       def configure(self) -> None:
+           self.register(PostgresRepository(settings), config={"dsn": "..."})
+           self.register(RedisCache(settings))
+
+   async with MyApp() as app:
+       repo = app.get(Capability.PERSISTENCE)
+   ```
+
+3. **`app.registry`** — the escape hatch, for what tiers 1-2 don't cover
+   (e.g. `get_all()` for an intentional multi-port-per-capability setup
+   like a primary + replica pair):
+
+   ```python
+   primary, replica = app.registry.get_all(Capability.PERSISTENCE)
+   ```
+
+There is no separate "`PluginRegistry` direct" or "`deps.py` + `lru_cache`"
+pattern to choose between — both are what tier 2/3 above look like when
+hand-rolled outside `ApplicationBootstrap`, minus the correct shutdown
+ordering (ports LIFO, then `shutdown_telemetry()`) tiers 1-3 give you for
+free. Construct a bare `PluginRegistry` yourself only if you're building a
+different composition root on top of `openframe-core`, not application code.
 
 ---
 

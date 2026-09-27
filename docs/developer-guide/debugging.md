@@ -45,22 +45,25 @@ except OpenFrameError:
 
 ---
 
-## PluginRegistry Failures
+## PluginRegistry / ApplicationBootstrap Failures
 
-**`PluginNotFoundError`** — no port registered for the requested `Capability`. Verify `registry.register(port)` was called before `registry.get(Capability.X)`.
+These apply identically whether you're using `PluginRegistry` directly or through `ApplicationBootstrap` (`app.get(...)`, `app.start()`) — the bootstrap delegates straight through.
 
-**`AmbiguousCapabilityError`** — more than one port registered for the capability passed to `get()`. Use `registry.get_all(Capability.X)` if multiple same-capability ports is intentional.
+**`KeyError`** — no port registered for the requested `Capability`. Verify `register(port)` was called before `get(Capability.X)`. (Note: despite the exception hierarchy also defining a `PluginNotFoundError`, `get()` actually raises a plain `KeyError` — not that class.)
 
-**`PluginInitializationError`** — a port's `initialize()` raised. The registry rolls back already-initialised ports before re-raising. Check the `cause` for the original error.
+**`AmbiguousCapabilityError`** — more than one port registered for the capability passed to `get()`. Use `get_all(Capability.X)` if multiple same-capability ports is intentional (`ApplicationBootstrap.get_all()` or `registry.get_all()`).
+
+**Whatever `initialize()` raised** — `initialize_all()` does **not** wrap a failing port's exception into a `PluginInitializationError` (that class exists in the exception hierarchy but nothing in `openframe-core` currently raises it). It rolls back already-initialised ports (LIFO) and then re-raises the original exception from `initialize()` completely unchanged — catch whatever your adapter actually raises, or `OpenFrameError` for the ecosystem-wide catch point if your adapters follow that convention:
 
 ```python
-from openframe.core.exceptions import PluginInitializationError
+from openframe.core.exceptions import OpenFrameError
 
 try:
-    await registry.initialize_all()
-except PluginInitializationError as exc:
-    print(exc.plugin_name)   # which port failed
-    print(exc.cause)         # original exception from initialize()
+    await app.start()   # or: await registry.initialize_all()
+except OpenFrameError as exc:
+    print(exc.code, exc.retryable)   # whatever the failing port's initialize() raised
+except TimeoutError:
+    print("a port's init_timeout elapsed — see PluginRegistry(default_init_timeout=...)")
 ```
 
 ---

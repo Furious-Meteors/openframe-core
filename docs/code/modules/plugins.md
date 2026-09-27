@@ -21,17 +21,24 @@ from openframe.core.ports import Capability
 
 ```python
 class PluginRegistry:
+    def __init__(self, *, default_init_timeout: float | None = None) -> None: ...
+
     def register(
         self,
-        port: BasePort,
-        config: dict[str, Any] | None = None,
+        plugin: BasePort,
+        *,
+        config: Mapping[str, Any] | None = None,
+        init_timeout: float | None = None,
     ) -> None: ...
 
-    async def initialize_all(
+    def set_context(
         self,
+        *,
         principal: PrincipalContext | None = None,
         tenant: TenantContext | None = None,
     ) -> None: ...
+
+    async def initialize_all(self) -> None: ...
 
     async def shutdown_all(self) -> None: ...
 
@@ -42,33 +49,40 @@ class PluginRegistry:
 
 ---
 
-#### `register(port, config)`
+#### `register(plugin, config, init_timeout)`
 
-Register a `BasePort` with optional config. The config dict is passed into `PluginContext.config` when `initialize_all()` is called.
+Register a `BasePort` with optional config and an optional per-port init timeout. The config mapping is passed into `PluginContext.config` when `initialize_all()` is called.
 
 **Parameters:**
 
 | Name | Type | Default | Description |
 |---|---|---|---|
-| `port` | `BasePort` | — | Any `BasePort` instance (including `BaseRepository`, `BaseProducer`, `BaseConsumer`) |
-| `config` | `dict[str, Any] \| None` | `None` | Port-specific configuration dict, e.g. `{"dsn": "postgres://..."}` |
+| `plugin` | `BasePort` | — | Any `BasePort` instance (including `BaseRepository`, `BaseProducer`, `BaseConsumer`) |
+| `config` | `Mapping[str, Any] \| None` | `None` | Port-specific configuration, e.g. `{"dsn": "postgres://..."}` |
+| `init_timeout` | `float \| None` | `None` | Seconds to wait for this port's `initialize()` in `initialize_all()`, overriding the registry's `default_init_timeout` for this port only. `None` falls back to that default (which is itself `None` — no timeout — unless set on the constructor) |
 
-**Raises:** `DuplicatePluginError` — if the same port instance is registered more than once.
+**Raises:** `TypeError` (object doesn't satisfy `BasePort`) · `DuplicatePluginError` — if a port with this name is already registered.
 
 ---
 
-#### `initialize_all(principal, tenant)`
+#### `set_context(principal, tenant)`
 
-Call `port.initialize(PluginContext)` on every registered port in registration order. Rolls back (shuts down already-initialised ports) if any port raises.
+Set the `principal`/`tenant` threaded through every port's `PluginContext` in `initialize_all()`. Call before `initialize_all()`, typically right after all `register()` calls.
 
 **Parameters:**
 
 | Name | Type | Default | Description |
 |---|---|---|---|
-| `principal` | `PrincipalContext \| None` | `None` | Optional caller identity threaded into `PluginContext` |
-| `tenant` | `TenantContext \| None` | `None` | Optional tenant identity threaded into `PluginContext` |
+| `principal` | `PrincipalContext \| None` | `None` | Optional caller identity threaded into every port's `PluginContext` |
+| `tenant` | `TenantContext \| None` | `None` | Optional tenant identity threaded into every port's `PluginContext` |
 
-**Raises:** `PluginInitializationError` — wrapping the original exception from `port.initialize()`, after rolling back.
+---
+
+#### `initialize_all()`
+
+Call `port.initialize(PluginContext)` on every registered port in registration order. Each port's config comes from its own `register()` call; `principal`/`tenant` come from `set_context()` (both default to `None` if never set). Each call is bounded by that port's `init_timeout` (or the registry's `default_init_timeout` if the port didn't specify one) — unbounded by default. Rolls back (shuts down already-initialised ports, in reverse order) if any port raises or times out, then re-raises.
+
+**Raises:** The exception raised by the failing port's `initialize()` — or a plain `TimeoutError` if its timeout elapsed first. Neither is wrapped into a `PluginError` subclass; the registry re-raises whatever `initialize()` raised (or `TimeoutError`) unchanged, after rollback.
 
 ---
 

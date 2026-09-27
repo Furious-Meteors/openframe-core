@@ -90,6 +90,8 @@ print(isinstance(exc, OpenFrameError))   # True — single catch point for the e
 
 ## Explore PluginRegistry
 
+`PluginRegistry` is the underlying mechanism — useful to poke at directly here to see how it works. In application code, use `ApplicationBootstrap` instead (`ApplicationBootstrap.compose(*ports)` for the common case) — see [How It Works § Choosing a Wiring Pattern](how-it-works.md#choosing-a-wiring-pattern).
+
 ```python
 import asyncio
 from openframe.core.ports import Capability

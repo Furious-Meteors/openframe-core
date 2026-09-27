@@ -8,7 +8,7 @@ An adapter raises `AdapterConnectionError` on every operation. The service is re
 
 - All requests to routes that use a database adapter return HTTP 500
 - Logs show `[postgres.connect] Cannot reach Postgres` or similar
-- `port.health()` returns `PluginHealth(status=PluginStatus.UNAVAILABLE, ...)`
+- `port.health()` returns `PluginHealth(status=PluginStatus.FAILED, ...)`
 - OTel spans show `StatusCode.ERROR` on `repository.*.get` / `repository.*.create`
 
 ---
@@ -35,7 +35,7 @@ import asyncio
 # If you have access to the registry instance:
 port = registry.get(Capability.PERSISTENCE)
 health = asyncio.run(port.health())
-print(health.status)    # PluginStatus.READY / DEGRADED / UNAVAILABLE
+print(health.status)    # PluginStatus.READY / FAILED (see PluginStatus for the full lifecycle enum)
 print(health.message)   # error detail
 ```
 
@@ -71,13 +71,13 @@ git push origin production
 
 ## Prevention
 
-Check `port.health()` in the `lifespan` handler and refuse startup if it returns `PluginStatus.UNAVAILABLE`. A service that cannot reach its database should not start serving traffic.
+Check `port.health()` in the `lifespan` handler and refuse startup if it returns `PluginStatus.FAILED`. A service that cannot reach its database should not start serving traffic.
 
 ```python
 from openframe.core.ports import Capability, PluginStatus
 
 port = registry.get(Capability.PERSISTENCE)
 health = await port.health()
-if health.status == PluginStatus.UNAVAILABLE:
+if health.status == PluginStatus.FAILED:
     raise RuntimeError(f"Port {port.name} unavailable at startup: {health.message}")
 ```

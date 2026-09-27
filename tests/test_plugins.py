@@ -8,6 +8,7 @@ plugin protocol. Capability lookups are keyed on the Capability enum.
 """
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 
 import pytest
@@ -40,17 +41,21 @@ class DummyPlugin:
         *,
         fail_init: bool = False,
         fail_shutdown: bool = False,
+        init_delay: float = 0.0,
     ) -> None:
         self.name = name
         self.version = "1.0.0"
         self.capability = capability
         self._fail_init = fail_init
         self._fail_shutdown = fail_shutdown
+        self._init_delay = init_delay
         self.initialized = False
         self.shutdown_called = False
         self.received_context: PluginContext | None = None
 
     async def initialize(self, context: PluginContext) -> None:
+        if self._init_delay:
+            await asyncio.sleep(self._init_delay)
         if self._fail_init:
             raise RuntimeError(f"Deliberate init failure in {self.name!r}")
         self.initialized = True
@@ -232,6 +237,90 @@ async def test_plugin_registry_failed_init_shuts_down_already_initialized() -> N
     # p1 was initialized before p2 failed — it must have been shut down
     assert p1.initialized is True
     assert p1.shutdown_called is True
+
+
+# ---------------------------------------------------------------------------
+# Init timeout tests
+# ---------------------------------------------------------------------------
+
+
+async def test_plugin_registry_no_timeout_by_default() -> None:
+    """
+    Neither register() nor the PluginRegistry constructor set a timeout by
+    default — a slow (but eventually completing) initialize() must still
+    succeed, preserving pre-existing behaviour for callers who don't opt in.
+    """
+    registry = PluginRegistry()
+    plugin = DummyPlugin(init_delay=0.05)
+    registry.register(plugin)
+
+    await registry.initialize_all()
+
+    assert plugin.initialized is True
+
+
+async def test_plugin_registry_default_init_timeout_raises_timeout_error() -> None:
+    """
+    A registry-wide default_init_timeout applies to every port that doesn't
+    override it per-port via register().
+    """
+    registry = PluginRegistry(default_init_timeout=0.01)
+    plugin = DummyPlugin(init_delay=1.0)
+    registry.register(plugin)
+
+    with pytest.raises(TimeoutError):
+        await registry.initialize_all()
+
+    assert plugin.initialized is False
+
+
+async def test_plugin_registry_per_port_init_timeout_raises_timeout_error() -> None:
+    """
+    A per-port init_timeout passed to register() applies even when the
+    registry itself has no default_init_timeout.
+    """
+    registry = PluginRegistry()
+    plugin = DummyPlugin(init_delay=1.0)
+    registry.register(plugin, init_timeout=0.01)
+
+    with pytest.raises(TimeoutError):
+        await registry.initialize_all()
+
+    assert plugin.initialized is False
+
+
+async def test_plugin_registry_per_port_init_timeout_overrides_default() -> None:
+    """
+    A per-port init_timeout takes precedence over the registry's
+    default_init_timeout for that specific port.
+    """
+    registry = PluginRegistry(default_init_timeout=0.01)
+    plugin = DummyPlugin(init_delay=0.05)
+    registry.register(plugin, init_timeout=1.0)
+
+    await registry.initialize_all()
+
+    assert plugin.initialized is True
+
+
+async def test_plugin_registry_init_timeout_rolls_back_already_initialized() -> None:
+    """
+    A TimeoutError from one port's initialize() triggers the same rollback
+    behaviour as any other initialize() failure — already-initialized ports
+    are shut down in reverse order before the TimeoutError propagates.
+    """
+    registry = PluginRegistry()
+    p1 = DummyPlugin(name="first")
+    p2 = DummyPlugin(name="second", init_delay=1.0)
+    registry.register(p1)
+    registry.register(p2, init_timeout=0.01)
+
+    with pytest.raises(TimeoutError):
+        await registry.initialize_all()
+
+    assert p1.initialized is True
+    assert p1.shutdown_called is True
+    assert p2.initialized is False
 
 
 async def test_plugin_registry_shutdown_all_never_raises() -> None:

@@ -6,20 +6,38 @@
 
 ### openframe-core
 
+Done since this was last updated:
+
+- ~~Establish `ApplicationBootstrap` as the recommended wiring path~~ —
+  resolved by consolidating to one class at three levels of ceremony
+  (`compose()` → subclass + `configure()` → `.registry` escape hatch)
+  instead of three competing patterns. See
+  [Design Decisions](../architecture/design-decisions.md) and
+  [How It Works § Choosing a Wiring Pattern](../../developer-guide/how-it-works.md#choosing-a-wiring-pattern).
+- ~~`test_middleware_types.py`~~ — already existed (147 lines); this item
+  was stale.
+- ~~Remove redundant `pytest.ini`~~ — already true; no `pytest.ini` exists,
+  only `[tool.pytest.ini_options]` in `pyproject.toml`. This item was
+  stale.
+
 Documentation tasks:
 
-- **Establish `ApplicationBootstrap` as the recommended wiring path** in
-  the developer guide and the `runtime` module doc. Document `PluginRegistry`
-  direct usage and `deps.py` + `lru_cache` as explicit alternatives with the
-  conditions under which you'd choose each. Without this, three equivalent-looking
-  patterns coexist with no hierarchy — see [Design Decisions](../architecture/design-decisions.md).
+- (none currently open for `openframe-core` itself — see Lower-priority
+  items below)
 
 Lower-priority items:
 
-- `test_middleware_types.py` — add missing test file for ASGI type alias imports
-- Remove redundant `pytest.ini` — configuration already present in `pyproject.toml`
-- Pin OTel SDK dev dependency to exact version — `conftest.py` accesses `_TRACER_PROVIDER_SET_ONCE._done` directly; a patch release could rename this attribute
+- Pin OTel SDK dev dependency to exact version — `conftest.py`/`testing/fixtures.py`
+  accesses `_TRACER_PROVIDER_SET_ONCE._done` directly; a patch release
+  could rename this attribute
 - Switch to Trusted Publishing on PyPI — remove `PYPI_API_TOKEN` secret, use OIDC via `pypa/gh-action-pypi-publish`
+- Consider whether `PluginNotFoundError`/`PluginInitializationError` should
+  actually be raised where their names imply (`PluginRegistry.get()`
+  currently raises a plain `KeyError`; `initialize_all()` re-raises the
+  original exception unwrapped) — both classes exist in the public
+  exception hierarchy but are dead code today. Not done as part of the
+  wiring-pattern consolidation since it's a behavioral change, not a
+  documentation fix.
 
 ### openframe-adapters
 

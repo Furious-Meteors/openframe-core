@@ -9,16 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Watch items (architectural)
-
-- **Three application wiring options** — `deps.py` + `lru_cache`,
-  `PluginRegistry` direct, and `ApplicationBootstrap` now coexist without a
-  documented hierarchy. The ambiguity is better-named than before but still
-  unresolved. The next documentation pass must establish `ApplicationBootstrap`
-  as the default starting point and frame the other two as explicit alternatives
-  with stated conditions. Tracked in the roadmap.
-
 ### Added
+
+- **`ApplicationBootstrap.compose(*ports)`, `.get_all()`, `.registry`** —
+  resolves the long-standing "three wiring options" ambiguity (previously
+  tracked here as an architectural watch item and in the roadmap) by
+  consolidating to one recommended class at three levels of ceremony
+  instead of three competing patterns:
+  - `compose(*ports)` (new classmethod) — zero-subclass entry point for a
+    service with one or a few ports and no per-port `config`/`init_timeout`.
+    Registers each port immediately at construction; `configure()` stays
+    the default no-op.
+  - `get_all(capability)` (new method) — mirrors `PluginRegistry.get_all()`,
+    closing the one real gap that previously forced a multi-port-per-capability
+    setup (e.g. primary + replica) off `ApplicationBootstrap` and onto
+    `PluginRegistry` directly.
+  - `registry` (new read-only property) — exposes the underlying
+    `PluginRegistry` for customization neither of the above covers (e.g.
+    `list_plugins()`), without standing up a second, parallel registry.
+
+  `PluginRegistry` direct construction and `deps.py` + `lru_cache` are no
+  longer documented as peer alternatives to `ApplicationBootstrap` — see
+  `docs/technical/architecture/design-decisions.md` and
+  `docs/developer-guide/how-it-works.md`'s new "Choosing a Wiring Pattern"
+  section for the full resolution.
+
+- **`PluginRegistry`/`ApplicationBootstrap` per-port init timeout** —
+  `PluginRegistry(default_init_timeout=...)` and
+  `PluginRegistry.register(..., init_timeout=...)` (mirrored on
+  `ApplicationBootstrap`'s constructor and `register()`) bound how long
+  `initialize_all()` waits for a single port's `initialize()` before
+  giving up. Both default to `None` (no timeout), preserving prior
+  behaviour exactly for callers who don't opt in. Addresses a real
+  production risk: previously, one adapter's `initialize()` hanging
+  (e.g. a TCP connection that completes the handshake but never
+  responds) would block application startup indefinitely with no way
+  to bound it. A timeout surfaces as a plain `TimeoutError` and is
+  handled identically to any other `initialize()` failure — already-
+  initialized ports are rolled back (LIFO) before it propagates.
 
 - **`openframe.core.telemetry.shutdown_telemetry()`** — flushes and shuts
   down the OTel SDK, ensuring the `BatchSpanProcessor` exports all buffered
@@ -36,6 +64,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Re-exported as `openframe.core.tracing.propagation`.
 
 ### Fixed
+
+#### Code
+
+- `TracingProxy` (`tracing/proxy.py`) — replaced the deprecated
+  `asyncio.iscoroutinefunction()` sync/async probe with
+  `inspect.iscoroutinefunction()`. `asyncio.iscoroutinefunction` is
+  slated for removal in Python 3.16; this was the only deprecation
+  warning in the test suite.
+- `AmbiguousCapabilityError` (`exceptions/plugin.py`) — its `capability`
+  and `matches` constructor arguments are now also mirrored into
+  `self.context`, matching the pattern every other `AdapterError`/
+  `PluginError` subclass already follows (e.g. `AdapterError` mirrors
+  `adapter`/`operation` into `context`). Previously these two fields
+  were set as plain attributes but silently absent from `context`.
+
+#### Documentation
+
+- Corrected `PluginStatus` across `docs/technical/overview/glossary.md`,
+  `docs/code/modules/ports.md`, `docs/code/modules/health.md`, and four
+  operational runbooks — several described a `READY`/`DEGRADED`/
+  `UNAVAILABLE` enum that has never existed in source. The actual enum
+  (`ports/health.py`) is `DISCOVERED`/`REGISTERED`/`CONFIGURED`/
+  `INITIALIZED`/`READY`/`STOPPING`/`STOPPED`/`FAILED`; a failed health
+  check reports `FAILED`, with finer detail carried in
+  `PluginHealth.message`/`.details`, not a dedicated status value.
+- Corrected the `PluginContext`, `PrincipalContext`, and `TenantContext`
+  examples in `docs/code/modules/ports.md` — the shown `PluginContext`
+  was missing the required `plugin_name` field entirely and typed
+  `config` as `dict` instead of `Mapping`; `PrincipalContext`/
+  `TenantContext` showed fields (`attributes`, `roles: frozenset[str]`)
+  that don't exist on the real dataclasses (`claims`,
+  `roles: tuple[str, ...]`, `name: str`).
+- Added [ADR-007](../docs/technical/architecture/adrs/adr-007-schema-contracts.md)
+  documenting the `openframe.core.schemas` `@contract` marker shipped in
+  v3.2.1 — the module's own docstring already cited "ADR-007" before
+  this record existed.
+- Corrected `docs/code/modules/plugins.md` and `docs/code/modules/runtime.md`,
+  both stale independently of the init-timeout addition above:
+  `initialize_all()` was documented as taking `principal`/`tenant`
+  parameters directly (they're actually set separately via
+  `PluginRegistry.set_context()`, undocumented until now); `ApplicationBootstrap`
+  was documented as having a `get_all()` method that did not exist on
+  that class at the time (only on `PluginRegistry` itself) — since
+  resolved by actually adding `get_all()` to `ApplicationBootstrap`, see
+  the wiring-consolidation entry above; `ApplicationBootstrap.health()`
+  — a real method — was undocumented entirely; and `start()`/`initialize_all()`
+  were both documented as raising a wrapped `PluginInitializationError`,
+  when in fact the registry re-raises whatever `initialize()` raised
+  (or a plain `TimeoutError`) completely unwrapped.
+- Corrected `docs/developer-guide/debugging.md`'s "PluginRegistry Failures"
+  section, which repeated the same `PluginInitializationError` inaccuracy
+  above, and additionally claimed `get()` raises `PluginNotFoundError` for
+  a missing capability — it actually raises a plain `KeyError`.
+  `PluginNotFoundError` and `PluginInitializationError` both exist in the
+  public exception hierarchy (`openframe.core.exceptions`) but neither is
+  currently raised anywhere in `openframe-core`'s own source — flagged as
+  a roadmap item (dead-code exception classes), not fixed here, since
+  making them actually get raised would be a behavioral change.
 
 #### CI/CD
 

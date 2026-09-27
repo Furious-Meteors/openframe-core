@@ -12,6 +12,7 @@ Architecture Decision Records (ADRs) capture significant design choices, the alt
 | [ADR-004](adr-004-pydantic.md) | Accepted — v1.0.0 | Pydantic Settings for Adapter Configuration |
 | [ADR-005](adr-005-middleware.md) | Accepted — v1.0.0 | Pure ASGI Middleware for Telemetry |
 | [ADR-006](adr-006-unified-port-lifecycle.md) | Accepted — v3.0.0 | Unified Port + Lifecycle Contract (supersedes port/health/plugin portions of ADR-002) |
+| [ADR-007](adr-007-schema-contracts.md) | Accepted — v3.2.1 | `@contract` Marker for Cross-Service Schema Governance |
 
 ---
 
@@ -19,4 +20,5 @@ Architecture Decision Records (ADRs) capture significant design choices, the alt
 
 - Start with [ADR-002](adr-002-hexagonal.md) for the overall hexagonal architecture rationale.
 - Read [ADR-006](adr-006-unified-port-lifecycle.md) to understand what changed in v3.0.0 and why — it supersedes the port, health, and plugin sections of ADR-002.
+- Read [ADR-007](adr-007-schema-contracts.md) for the `openframe.core.schemas` marker that `openframe-schemas` (in `openframe-tooling`) governs.
 - [ADR-001](adr-001-namespace.md), [ADR-003](adr-003-async.md), [ADR-004](adr-004-pydantic.md), and [ADR-005](adr-005-middleware.md) are independent and can be read in any order.

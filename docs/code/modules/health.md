@@ -11,7 +11,7 @@ async def health(self) -> PluginHealth:
         return PluginHealth(status=PluginStatus.READY)
     except Exception as exc:
         return PluginHealth(
-            status=PluginStatus.UNAVAILABLE,
+            status=PluginStatus.FAILED,
             message=str(exc),
         )
 ```
@@ -28,9 +28,10 @@ PluginHealth(
     details={"ping_ms": 2.1, "schema_ok": True},
 )
 
-# Degraded
+# Degraded but still serving — no separate status exists; encode the
+# nuance in message/details while status stays READY
 PluginHealth(
-    status=PluginStatus.DEGRADED,
+    status=PluginStatus.READY,
     message="replica lag 5s",
     details={"lag_s": 5},
 )

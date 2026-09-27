@@ -30,10 +30,10 @@ from openframe.core.ports import PluginStatus
 import asyncio
 
 health = asyncio.run(consumer.health())
-print(health.status)   # PluginStatus.READY = broker reachable; UNAVAILABLE = connection lost
+print(health.status)   # PluginStatus.READY = broker reachable; FAILED = connection lost
 ```
 
-If `health.status == PluginStatus.UNAVAILABLE`, this is a [Redis Connection Lost](redis-connection-lost.md) or broker outage, not a stuck consumer.
+If `health.status == PluginStatus.FAILED`, this is a [Redis Connection Lost](redis-connection-lost.md) or broker outage, not a stuck consumer.
 
 ---
 

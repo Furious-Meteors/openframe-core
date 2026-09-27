@@ -380,6 +380,11 @@ def test_ambiguous_capability_error_preserves_extra_attributes() -> None:
     assert exc.capability == "persistence"
     assert exc.matches == ["pg-main", "pg-replica"]
     assert isinstance(exc, PluginError)
+    assert exc.context == {
+        "plugin_name": "pg-main",
+        "capability": "persistence",
+        "matches": ["pg-main", "pg-replica"],
+    }
 
 
 # ---------------------------------------------------------------------------

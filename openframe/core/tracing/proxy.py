@@ -29,7 +29,7 @@ Dependency order: imports ``openframe.core.telemetry`` (lower in DAG). ✓
 """
 from __future__ import annotations
 
-import asyncio
+import inspect
 from collections.abc import Callable
 from typing import Any
 
@@ -115,7 +115,7 @@ class TracingProxy:
         # Do NOT retain this reference — the closure re-resolves on each call.
         probe = getattr(wrapped, name)
 
-        if not asyncio.iscoroutinefunction(probe):
+        if not inspect.iscoroutinefunction(probe):
             # Sync or non-callable: return directly without caching.
             # The caller always gets the current attribute from wrapped.
             return probe

@@ -8,10 +8,23 @@ A working integration of `openframe-core` v3.0 in 5 minutes. No Modal account re
 
 A FastAPI app that:
 
-- Wires an in-memory repository through `PluginRegistry` with managed lifecycle
+- Wires an in-memory repository through `ApplicationBootstrap.compose()`
+  — the recommended, zero-subclass composition root — with managed lifecycle
 - Records OTel spans locally (no external backend needed)
 - Passes requests through `TelemetryMiddleware`
 - Demonstrates the `BasePort` identity + lifecycle contract
+
+> **Why `ApplicationBootstrap.compose()`?**
+> `ApplicationBootstrap` wraps `PluginRegistry` and adds the correct
+> shutdown ordering (ports first, then `shutdown_telemetry()` so no spans
+> are silently dropped at process exit) behind a `configure()` →
+> `start()` → `stop()` lifecycle — it's the one recommended composition
+> root for all application code. `compose(*ports)` is its zero-ceremony
+> form: no subclass needed for a service with one or a few ports and no
+> per-port `config`/`init_timeout`. Subclass with `configure()` once you
+> need those; reach for `bootstrap.registry` directly only for what
+> neither tier covers (e.g. `get_all()` for an intentional multi-port
+> setup) — see [How It Works](../how-it-works.md#choosing-a-wiring-pattern).
 
 ---
 
@@ -37,7 +50,6 @@ from fastapi import FastAPI, HTTPException
 
 from openframe.core.exceptions import AdapterNotFoundError
 from openframe.core.middleware import TelemetryMiddleware
-from openframe.core.plugins import PluginRegistry
 from openframe.core.ports import (
     BaseRepository,
     Capability,
@@ -45,6 +57,7 @@ from openframe.core.ports import (
     PluginHealth,
     PluginStatus,
 )
+from openframe.core.runtime import ApplicationBootstrap
 from openframe.core.telemetry import record_lifecycle_event, setup_telemetry
 from openframe.core.tracing import TracingProxy
 
@@ -98,12 +111,10 @@ class InMemoryRepo:
 assert isinstance(InMemoryRepo(), BaseRepository)
 
 
-# ── Registry and wiring ──────────────────────────────────────────────────────
+# ── Composition root — no subclass needed for a single port ─────────────────
 
-registry = PluginRegistry()
 _raw_repo = InMemoryRepo()
-registry.register(_raw_repo)
-
+_app = ApplicationBootstrap.compose(_raw_repo)
 _repo = TracingProxy(_raw_repo, prefix="repository.item")
 
 
@@ -111,9 +122,9 @@ _repo = TracingProxy(_raw_repo, prefix="repository.item")
 async def lifespan(app: FastAPI):
     setup_telemetry()                          # no-op if OTEL_EXPORTER_OTLP_ENDPOINT absent
     record_lifecycle_event("cold_start")
-    await registry.initialize_all()            # calls repo.initialize(PluginContext())
+    await _app.start()                         # repo.initialize(PluginContext())
     yield
-    await registry.shutdown_all()              # calls repo.shutdown() in LIFO order
+    await _app.stop()                          # repo.shutdown() (LIFO) then shutdown_telemetry()
 
 
 app = FastAPI(title="openframe-quickstart", lifespan=lifespan)
@@ -137,7 +148,7 @@ async def create_item(body: dict):
 
 @app.get("/health")
 async def health():
-    port = registry.get(Capability.PERSISTENCE)
+    port = _app.get(Capability.PERSISTENCE)
     h = await port.health()
     return {"status": h.status, "name": port.name}
 ```
@@ -189,4 +200,4 @@ export OTEL_SERVICE_NAME="openframe-quickstart"
 uvicorn main:app
 ```
 
-Every request now produces a span in your OTel backend. The `/health` route calls `port.health()` through `PluginRegistry` — a `PluginHealth` snapshot, not the old `ping()`/`is_ready()` pair.
+Every request now produces a span in your OTel backend. The `/health` route calls `port.health()` through `ApplicationBootstrap.get()` — a `PluginHealth` snapshot, not the old `ping()`/`is_ready()` pair.

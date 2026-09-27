@@ -43,7 +43,7 @@ async def _traced(*args, **kwargs):
 
 ## Health Contract
 
-`Lifecycle.health()` must never raise — return `PluginHealth(status=PluginStatus.UNAVAILABLE, message="<reason>")` on any failure. This is the single health primitive in v3; there is no separate `ping()` or `is_ready()`.
+`Lifecycle.health()` must never raise — return `PluginHealth(status=PluginStatus.FAILED, message="<reason>")` on any failure. This is the single health primitive in v3; there is no separate `ping()` or `is_ready()`.
 
 ```python
 async def health(self) -> PluginHealth:
@@ -52,7 +52,7 @@ async def health(self) -> PluginHealth:
         return PluginHealth(status=PluginStatus.READY)
     except Exception as exc:
         return PluginHealth(
-            status=PluginStatus.UNAVAILABLE,
+            status=PluginStatus.FAILED,
             message=str(exc),
         )
 ```

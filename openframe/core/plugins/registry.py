@@ -30,6 +30,7 @@ Dependency order:
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -94,11 +95,23 @@ class PluginRegistry:
             # ... serve traffic ...
     """
 
-    def __init__(self) -> None:
-        """Initialise an empty registry."""
+    def __init__(self, *, default_init_timeout: float | None = None) -> None:
+        """
+        Initialise an empty registry.
+
+        Args:
+            default_init_timeout: Seconds to wait for each port's
+                ``initialize()`` to complete when the port itself did not
+                specify a timeout via :meth:`register`. ``None`` (the
+                default) means no timeout is applied — matches pre-existing
+                behaviour where a hung ``initialize()`` blocks startup
+                indefinitely.
+        """
         self._plugins: list[BasePort] = []
         self._by_name: dict[str, BasePort] = {}
         self._configs: dict[str, Mapping[str, Any]] = {}
+        self._init_timeouts: dict[str, float | None] = {}
+        self._default_init_timeout = default_init_timeout
         self._initialized: list[BasePort] = []
         self._principal: PrincipalContext | None = None
         self._tenant: TenantContext | None = None
@@ -112,6 +125,7 @@ class PluginRegistry:
         plugin: BasePort,
         *,
         config: Mapping[str, Any] | None = None,
+        init_timeout: float | None = None,
     ) -> None:
         """
         Register a port.
@@ -125,6 +139,14 @@ class PluginRegistry:
                     to :class:`~openframe.core.ports.health.PluginContext`
                     in :meth:`initialize_all`. Defaults to an empty mapping
                     when not provided.
+            init_timeout: Seconds to wait for this port's ``initialize()``
+                    to complete in :meth:`initialize_all`, overriding the
+                    registry's ``default_init_timeout`` for this port only.
+                    ``None`` (the default) falls back to the registry-wide
+                    default; pass an explicit value to give a slow-starting
+                    port (e.g. a Kafka broker doing leader election) more
+                    time than the registry default allows, or a fast one
+                    less.
 
         Raises:
             TypeError:            Object does not satisfy the ``BasePort``
@@ -147,6 +169,7 @@ class PluginRegistry:
         self._plugins.append(plugin)
         self._by_name[plugin.name] = plugin
         self._configs[plugin.name] = config if config is not None else {}
+        self._init_timeouts[plugin.name] = init_timeout
         _log.debug("Plugin registered: name=%r capability=%r", plugin.name, plugin.capability)
 
     def set_context(
@@ -263,6 +286,16 @@ class PluginRegistry:
         its own registered ``config`` (see :meth:`register`) plus the
         registry-wide ``principal``/``tenant`` set via :meth:`set_context`.
 
+        Each port's ``initialize()`` is bounded by its own ``init_timeout``
+        (see :meth:`register`), falling back to the registry's
+        ``default_init_timeout`` when not set per-port. Neither is set by
+        default, so a hung ``initialize()`` blocks startup indefinitely
+        unless a timeout is explicitly configured — this preserves
+        pre-existing behaviour for callers that don't opt in. A timeout
+        surfaces as a plain ``TimeoutError`` (Python 3.11+: the same type
+        ``asyncio.TimeoutError`` aliases), handled identically to any other
+        ``initialize()`` failure below.
+
         If any port fails to initialize the exception propagates
         immediately. Ports that were already initialized before the
         failure are shut down in reverse order before the exception is
@@ -270,8 +303,11 @@ class PluginRegistry:
         serving traffic.
 
         Raises:
-            Exception: The exception raised by the failing port's
-                       ``initialize()`` method.
+            Exception:     The exception raised by the failing port's
+                           ``initialize()`` method.
+            TimeoutError:  The port's ``init_timeout`` (or the registry's
+                           ``default_init_timeout``) elapsed before
+                           ``initialize()`` completed.
         """
         self._initialized = []
         for plugin in self._plugins:
@@ -281,9 +317,18 @@ class PluginRegistry:
                 principal=self._principal,
                 tenant=self._tenant,
             )
+            timeout = self._init_timeouts.get(plugin.name)
+            if timeout is None:
+                timeout = self._default_init_timeout
             try:
-                _log.debug("Initializing plugin: %r", plugin.name)
-                await plugin.initialize(context)
+                _log.debug(
+                    "Initializing plugin: %r (timeout=%r)", plugin.name, timeout
+                )
+                if timeout is not None:
+                    async with asyncio.timeout(timeout):
+                        await plugin.initialize(context)
+                else:
+                    await plugin.initialize(context)
                 self._initialized.append(plugin)
                 _log.debug("Plugin initialized: %r", plugin.name)
             except Exception as exc:

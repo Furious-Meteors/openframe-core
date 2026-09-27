@@ -80,11 +80,11 @@ Terms used throughout the OpenFrame documentation. Each term is defined precisel
 
 **Plugin** — in v3, a "plugin" is simply a registered `BasePort`. There is no separate plugin protocol. Any `BasePort` (i.e. any `BaseRepository`, `BaseProducer`, or `BaseConsumer`) can be registered in `PluginRegistry` without additional wrapper code.
 
-**PluginHealth** — a dataclass in `openframe.core.ports` returned by `Lifecycle.health()`. Carries `status: PluginStatus`, `message: str | None`, and `details: dict[str, Any]`.
+**PluginHealth** — a frozen dataclass in `openframe.core.ports` returned by `Lifecycle.health()`. Carries `status: PluginStatus`, `message: str` (default `""`), and `details: dict[str, Any]`.
 
 **PluginRegistry** — the managed registry in `openframe.core.plugins`. Accepts any `BasePort`, initialises in registration order, shuts down in LIFO order, and looks up by `Capability` enum member. `get()` is strict — raises `AmbiguousCapabilityError` on >1 match.
 
-**PluginStatus** — an enum in `openframe.core.ports` with values `READY`, `DEGRADED`, `UNAVAILABLE`.
+**PluginStatus** — an enum in `openframe.core.ports` with values `DISCOVERED`, `REGISTERED`, `CONFIGURED`, `INITIALIZED`, `READY`, `STOPPING`, `STOPPED`, `FAILED`. A failed `health()` returns `PluginStatus.FAILED`, not a separate "unavailable"/"degraded" value — use `PluginHealth.details` for finer-grained diagnostics.
 
 **Port** — an abstract interface defined as a Python `Protocol` in `openframe-core`. Ports define *what* the contract is; adapters define *how* it is fulfilled for a specific backend. Every port in v3 is a `BasePort` — identity-aware and lifecycle-aware.
 

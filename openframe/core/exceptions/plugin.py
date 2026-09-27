@@ -140,3 +140,4 @@ class AmbiguousCapabilityError(PluginError):
         super().__init__(message, plugin_name)
         self.capability = capability
         self.matches = matches
+        self.context.update({"capability": capability, "matches": matches})
