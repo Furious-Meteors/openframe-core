@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3041,18 +3041,18 @@
 <ul>
 <li>All requests to routes that use a database adapter return HTTP 500</li>
 <li>Logs show <code>[postgres.connect] Cannot reach Postgres</code> or similar</li>
-<li><code>port.health()</code> returns <code>PluginHealth(status=PluginStatus.UNAVAILABLE, ...)</code></li>
+<li><code>port.health()</code> returns <code>PluginHealth(status=PluginStatus.FAILED, ...)</code></li>
 <li>OTel spans show <code>StatusCode.ERROR</code> on <code>repository.*.get</code> / <code>repository.*.create</code></li>
 </ul>
 <hr />
 <h2 id="diagnosis">Diagnosis<a class="headerlink" href="#diagnosis" title="Permanent link">&para;</a></h2>
 <p><strong>1. Verify the backend is reachable.</strong></p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># From within the Modal container or local environment</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="s2">import asyncio, asyncpg</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s2">asyncio.run(asyncpg.connect(dsn=&#39;&lt;DATABASE_URL&gt;&#39;))</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">print(&#39;connected&#39;)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">&quot;</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s2">asyncio.run(asyncpg.connect(dsn='&lt;DATABASE_URL&gt;'))</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">print('connected')</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">"</span>
 </span></code></pre></div>
 <p><strong>2. Check <code>health()</code> directly via <code>PluginRegistry</code>.</strong></p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.ports</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
@@ -3061,11 +3061,11 @@
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># If you have access to the registry instance:</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">port</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">health</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">port</span><span class="o">.</span><span class="n">health</span><span class="p">())</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">health</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>    <span class="c1"># PluginStatus.READY / DEGRADED / UNAVAILABLE</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">health</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>    <span class="c1"># PluginStatus.READY / FAILED (see PluginStatus for the full lifecycle enum)</span>
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">health</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>   <span class="c1"># error detail</span>
 </span></code></pre></div>
 <p><strong>3. Verify env vars are present.</strong></p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>modal<span class="w"> </span>app<span class="w"> </span>logs<span class="w"> </span>&lt;app-name&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;DATABASE_URL\|POOL&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>modal<span class="w"> </span>app<span class="w"> </span>logs<span class="w"> </span>&lt;app-name&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">"DATABASE_URL\|POOL"</span>
 </span></code></pre></div>
 <p><code>AdapterConfigurationError</code> at startup (not <code>AdapterConnectionError</code>) means a required env var is missing — check <code>OPENFRAME_ENV</code>, <code>DATABASE_URL</code>, and any adapter-specific vars.</p>
 <hr />
@@ -3081,13 +3081,13 @@
 </span></code></pre></div>
 <hr />
 <h2 id="prevention">Prevention<a class="headerlink" href="#prevention" title="Permanent link">&para;</a></h2>
-<p>Check <code>port.health()</code> in the <code>lifespan</code> handler and refuse startup if it returns <code>PluginStatus.UNAVAILABLE</code>. A service that cannot reach its database should not start serving traffic.</p>
+<p>Check <code>port.health()</code> in the <code>lifespan</code> handler and refuse startup if it returns <code>PluginStatus.FAILED</code>. A service that cannot reach its database should not start serving traffic.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.ports</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span><span class="p">,</span> <span class="n">PluginStatus</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">port</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">health</span> <span class="o">=</span> <span class="k">await</span> <span class="n">port</span><span class="o">.</span><span class="n">health</span><span class="p">()</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">if</span> <span class="n">health</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">PluginStatus</span><span class="o">.</span><span class="n">UNAVAILABLE</span><span class="p">:</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Port </span><span class="si">{</span><span class="n">port</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> unavailable at startup: </span><span class="si">{</span><span class="n">health</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">if</span> <span class="n">health</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">PluginStatus</span><span class="o">.</span><span class="n">FAILED</span><span class="p">:</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Port </span><span class="si">{</span><span class="n">port</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> unavailable at startup: </span><span class="si">{</span><span class="n">health</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
 
 
@@ -3203,7 +3203,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "search.share", "content.action.edit", "content.action.view", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../javascripts/extra.js"></script>
       

@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3343,9 +3343,9 @@
 <p><strong>OTLP</strong> — OpenTelemetry Protocol. The wire format used to export traces and metrics to a backend (Grafana Cloud, Honeycomb, Datadog, etc.). Configured via <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> and <code>OTEL_EXPORTER_OTLP_HEADERS</code>.</p>
 <h2 id="p">P<a class="headerlink" href="#p" title="Permanent link">&para;</a></h2>
 <p><strong>Plugin</strong> — in v3, a "plugin" is simply a registered <code>BasePort</code>. There is no separate plugin protocol. Any <code>BasePort</code> (i.e. any <code>BaseRepository</code>, <code>BaseProducer</code>, or <code>BaseConsumer</code>) can be registered in <code>PluginRegistry</code> without additional wrapper code.</p>
-<p><strong>PluginHealth</strong> — a dataclass in <code>openframe.core.ports</code> returned by <code>Lifecycle.health()</code>. Carries <code>status: PluginStatus</code>, <code>message: str | None</code>, and <code>details: dict[str, Any]</code>.</p>
+<p><strong>PluginHealth</strong> — a frozen dataclass in <code>openframe.core.ports</code> returned by <code>Lifecycle.health()</code>. Carries <code>status: PluginStatus</code>, <code>message: str</code> (default <code>""</code>), and <code>details: dict[str, Any]</code>.</p>
 <p><strong>PluginRegistry</strong> — the managed registry in <code>openframe.core.plugins</code>. Accepts any <code>BasePort</code>, initialises in registration order, shuts down in LIFO order, and looks up by <code>Capability</code> enum member. <code>get()</code> is strict — raises <code>AmbiguousCapabilityError</code> on &gt;1 match.</p>
-<p><strong>PluginStatus</strong> — an enum in <code>openframe.core.ports</code> with values <code>READY</code>, <code>DEGRADED</code>, <code>UNAVAILABLE</code>.</p>
+<p><strong>PluginStatus</strong> — an enum in <code>openframe.core.ports</code> with values <code>DISCOVERED</code>, <code>REGISTERED</code>, <code>CONFIGURED</code>, <code>INITIALIZED</code>, <code>READY</code>, <code>STOPPING</code>, <code>STOPPED</code>, <code>FAILED</code>. A failed <code>health()</code> returns <code>PluginStatus.FAILED</code>, not a separate "unavailable"/"degraded" value — use <code>PluginHealth.details</code> for finer-grained diagnostics.</p>
 <p><strong>Port</strong> — an abstract interface defined as a Python <code>Protocol</code> in <code>openframe-core</code>. Ports define <em>what</em> the contract is; adapters define <em>how</em> it is fulfilled for a specific backend. Every port in v3 is a <code>BasePort</code> — identity-aware and lifecycle-aware.</p>
 <p><strong>Protocol</strong> — a Python structural subtyping mechanism (<code>typing.Protocol</code>). A class satisfies a Protocol if it has matching method signatures — no inheritance required. All ports in <code>openframe-core</code> are <code>runtime_checkable</code> Protocols.</p>
 <h2 id="q">Q<a class="headerlink" href="#q" title="Permanent link">&para;</a></h2>
@@ -3475,7 +3475,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "search.share", "content.action.edit", "content.action.view", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../javascripts/extra.js"></script>
       

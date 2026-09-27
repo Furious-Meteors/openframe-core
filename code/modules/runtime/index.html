@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2499,10 +2499,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#as-an-async-context-manager" class="md-nav__link">
+  <a href="#zero-ceremony-one-or-a-few-ports" class="md-nav__link">
     <span class="md-ellipsis">
       
-        As an async context manager
+        Zero-ceremony — one or a few ports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subclass-per-port-config-or-conditional-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subclass — per-port config, or conditional registration
       
     </span>
   </a>
@@ -2521,10 +2532,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#without-applicationbootstrap" class="md-nav__link">
+  <a href="#the-registry-escape-hatch-multi-port-per-capability" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Without ApplicationBootstrap
+        The registry escape hatch — multi-port-per-capability
       
     </span>
   </a>
@@ -2948,10 +2959,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#as-an-async-context-manager" class="md-nav__link">
+  <a href="#zero-ceremony-one-or-a-few-ports" class="md-nav__link">
     <span class="md-ellipsis">
       
-        As an async context manager
+        Zero-ceremony — one or a few ports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subclass-per-port-config-or-conditional-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subclass — per-port config, or conditional registration
       
     </span>
   </a>
@@ -2970,10 +2992,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#without-applicationbootstrap" class="md-nav__link">
+  <a href="#the-registry-escape-hatch-multi-port-per-capability" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Without ApplicationBootstrap
+        The registry escape hatch — multi-port-per-capability
       
     </span>
   </a>
@@ -3085,86 +3107,118 @@
 
 
 <h1 id="runtime">runtime<a class="headerlink" href="#runtime" title="Permanent link">&para;</a></h1>
-<p><code>openframe/core/runtime/</code> · Optional composition root.</p>
+<p><code>openframe/core/runtime/</code> · The recommended composition root, at three levels of ceremony.</p>
 <hr />
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p><code>ApplicationBootstrap</code> is an optional base class that manages <code>PluginRegistry</code> registration and lifecycle for you. It is an async context manager: <code>__aenter__</code> calls <code>start()</code> (which calls <code>initialize_all()</code>), and <code>__aexit__</code> calls <code>stop()</code> (which calls <code>shutdown_all()</code>). If you prefer to manage the registry directly, you do not need <code>ApplicationBootstrap</code> at all.</p>
+<p><code>ApplicationBootstrap</code> is the single recommended composition root for application code — not one of several competing wiring patterns. It manages <code>PluginRegistry</code> registration and lifecycle for you, as an async context manager: <code>__aenter__</code> calls <code>start()</code> (which calls <code>configure()</code> then <code>initialize_all()</code>), and <code>__aexit__</code> calls <code>stop()</code> (which calls <code>shutdown_all()</code> then <code>shutdown_telemetry()</code>).</p>
+<p>It's used at three levels of ceremony, not three separate patterns — see <a href="../../../developer-guide/how-it-works/#choosing-a-wiring-pattern">Choosing a Wiring Pattern</a> for the full guide:</p>
+<ol>
+<li><code>ApplicationBootstrap.compose(*ports)</code> — no subclass, for one or a few ports.</li>
+<li>Subclass + <code>configure()</code> — for per-port <code>config</code>/<code>init_timeout</code> or conditional registration.</li>
+<li><code>bootstrap.registry</code> — the escape hatch to the underlying <code>PluginRegistry</code> for what tiers 1-2 don't cover.</li>
+</ol>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApplicationBootstrap</span>
 </span></code></pre></div>
 <hr />
 <h2 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link">&para;</a></h2>
 <h3 id="applicationbootstrap"><code>ApplicationBootstrap</code><a class="headerlink" href="#applicationbootstrap" title="Permanent link">&para;</a></h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ApplicationBootstrap</span><span class="p">:</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="n">BasePort</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasePort</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BasePort</span><span class="p">]:</span> <span class="o">...</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ApplicationBootstrap&quot;</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_init_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        <span class="n">plugin</span><span class="p">:</span> <span class="n">BasePort</span><span class="p">,</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        <span class="n">config</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="n">init_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasePort</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BasePort</span><span class="p">]:</span> <span class="o">...</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="nd">@property</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">registry</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PluginRegistry</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="nd">@classmethod</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">compose</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">ports</span><span class="p">:</span> <span class="n">BasePort</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ApplicationBootstrap"</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">health</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PluginHealth</span><span class="p">]:</span> <span class="o">...</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ApplicationBootstrap"</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</span></code></pre></div>
+<hr />
+<h4 id="composeports-classmethod"><code>compose(*ports)</code> — classmethod<a class="headerlink" href="#composeports-classmethod" title="Permanent link">&para;</a></h4>
+<p>The zero-ceremony entry point. Builds an <code>ApplicationBootstrap</code> and registers each given port, in order, with no subclass. Covers the common case: settings are usually supplied at a port's own construction (e.g. <code>PostgresRepository(settings)</code>), not threaded through <code>PluginContext.config</code> — none of the four real <code>openframe-adapters</code> packages (Postgres, Mongo, Redis, Kafka) actually read <code>PluginContext.config</code> at all. Use a subclass with <code>configure()</code> instead once a port needs <code>config=</code>, <code>init_timeout=</code>, or registration order that depends on a runtime condition.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">async</span> <span class="k">with</span> <span class="n">ApplicationBootstrap</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">PostgresRepository</span><span class="p">(</span><span class="n">settings</span><span class="p">))</span> <span class="k">as</span> <span class="n">app</span><span class="p">:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">repo</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h4 id="configure"><code>configure()</code><a class="headerlink" href="#configure" title="Permanent link">&para;</a></h4>
-<p>Override this method to register ports. Called by <code>start()</code> before <code>initialize_all()</code>. The default implementation is a no-op.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyApp</span><span class="p">(</span><span class="n">ApplicationBootstrap</span><span class="p">):</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dsn&quot;</span><span class="p">:</span> <span class="s2">&quot;postgres://...&quot;</span><span class="p">})</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">RedisCache</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;redis://...&quot;</span><span class="p">})</span>
+<p>Override this method to register ports. Called by <code>start()</code> before <code>initialize_all()</code>. The default implementation is a no-op — <code>compose()</code> never overrides it; it registers ports immediately at construction instead.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyApp</span><span class="p">(</span><span class="n">ApplicationBootstrap</span><span class="p">):</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"dsn"</span><span class="p">:</span> <span class="s2">"postgres://..."</span><span class="p">})</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">RedisCache</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"url"</span><span class="p">:</span> <span class="s2">"redis://..."</span><span class="p">})</span>
 </span></code></pre></div>
 <hr />
 <h4 id="start"><code>start()</code><a class="headerlink" href="#start" title="Permanent link">&para;</a></h4>
-<p>Call <code>configure()</code> then <code>registry.initialize_all()</code>. Raises <code>PluginInitializationError</code> if any port fails to initialize.</p>
+<p>Call <code>configure()</code> then <code>registry.initialize_all()</code>. If any port's <code>initialize()</code> raises (or its <code>init_timeout</code> elapses first), that exception propagates <strong>unwrapped</strong> after already-initialized ports are rolled back — <code>start()</code> does not wrap it into a <code>PluginInitializationError</code> (that class is currently unused anywhere in <code>openframe-core</code>).</p>
 <hr />
 <h4 id="stop"><code>stop()</code><a class="headerlink" href="#stop" title="Permanent link">&para;</a></h4>
-<p>Call <code>registry.shutdown_all()</code>. Never raises.</p>
+<p>Call <code>registry.shutdown_all()</code>, then flush and shut down the OTel SDK via <code>shutdown_telemetry()</code>. Never raises — port and telemetry errors are both logged and shutdown continues.</p>
 <hr />
-<h4 id="registerport-config"><code>register(port, config)</code><a class="headerlink" href="#registerport-config" title="Permanent link">&para;</a></h4>
-<p>Delegate to <code>registry.register()</code>. Raises <code>DuplicatePluginError</code> if the same port instance is registered twice.</p>
+<h4 id="registerplugin-config-init_timeout"><code>register(plugin, config, init_timeout)</code><a class="headerlink" href="#registerplugin-config-init_timeout" title="Permanent link">&para;</a></h4>
+<p>Delegate to <code>registry.register()</code>. Raises <code>TypeError</code> if the object doesn't satisfy <code>BasePort</code>, or <code>DuplicatePluginError</code> if a port with this name is already registered. <code>init_timeout</code> overrides the bootstrap's own <code>default_init_timeout</code> (set on <code>__init__</code>) for this one port; <code>None</code> (the default) falls back to it.</p>
 <hr />
-<h4 id="getcapability-get_allcapability"><code>get(capability)</code> / <code>get_all(capability)</code><a class="headerlink" href="#getcapability-get_allcapability" title="Permanent link">&para;</a></h4>
-<p>Delegate to <code>registry.get()</code> / <code>registry.get_all()</code>. See <a href="../plugins/">plugins module</a> for semantics.</p>
+<h4 id="getcapability"><code>get(capability)</code><a class="headerlink" href="#getcapability" title="Permanent link">&para;</a></h4>
+<p>Delegate to <code>registry.get()</code> — strict, raises <code>AmbiguousCapabilityError</code> on &gt;1 match. Only valid after <code>start()</code> has completed.</p>
+<hr />
+<h4 id="get_allcapability"><code>get_all(capability)</code><a class="headerlink" href="#get_allcapability" title="Permanent link">&para;</a></h4>
+<p>Delegate to <code>registry.get_all()</code> — the escape hatch for the deliberate multi-port-per-capability case (e.g. primary + replica) that <code>get()</code>'s strictness rejects. Returns an empty list, never raises, when nothing matches.</p>
+<hr />
+<h4 id="registry-property"><code>registry</code> — property<a class="headerlink" href="#registry-property" title="Permanent link">&para;</a></h4>
+<p>The underlying <code>PluginRegistry</code> instance. For customization neither <code>compose()</code> nor a <code>configure()</code> subclass covers (e.g. <code>list_plugins()</code>), without standing up a second, parallel registry outside <code>ApplicationBootstrap</code>.</p>
+<hr />
+<h4 id="health"><code>health()</code><a class="headerlink" href="#health" title="Permanent link">&para;</a></h4>
+<p>Delegate to <code>registry.health_all()</code> — a live health snapshot (dict of port name → <code>PluginHealth</code>) for every registered port.</p>
 <hr />
 <h2 id="usage-patterns">Usage Patterns<a class="headerlink" href="#usage-patterns" title="Permanent link">&para;</a></h2>
-<h3 id="as-an-async-context-manager">As an async context manager<a class="headerlink" href="#as-an-async-context-manager" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApplicationBootstrap</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.ports</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyServiceBootstrap</span><span class="p">(</span><span class="n">ApplicationBootstrap</span><span class="p">):</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dsn&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="k">async</span> <span class="k">with</span> <span class="n">MyServiceBootstrap</span><span class="p">()</span> <span class="k">as</span> <span class="n">bootstrap</span><span class="p">:</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">repo</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="k">await</span> <span class="n">serve</span><span class="p">(</span><span class="n">ItemService</span><span class="p">(</span><span class="n">repo</span><span class="p">))</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="c1"># shutdown_all() called automatically on __aexit__</span>
+<h3 id="zero-ceremony-one-or-a-few-ports">Zero-ceremony — one or a few ports<a class="headerlink" href="#zero-ceremony-one-or-a-few-ports" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApplicationBootstrap</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.ports</span><span class="w"> </span><span class="kn">import</span> <span class="n">Capability</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">async</span> <span class="k">with</span> <span class="n">ApplicationBootstrap</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">())</span> <span class="k">as</span> <span class="n">bootstrap</span><span class="p">:</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">repo</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="k">await</span> <span class="n">serve</span><span class="p">(</span><span class="n">ItemService</span><span class="p">(</span><span class="n">repo</span><span class="p">))</span>
+</span></code></pre></div>
+<h3 id="subclass-per-port-config-or-conditional-registration">Subclass — per-port config, or conditional registration<a class="headerlink" href="#subclass-per-port-config-or-conditional-registration" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyServiceBootstrap</span><span class="p">(</span><span class="n">ApplicationBootstrap</span><span class="p">):</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"dsn"</span><span class="p">:</span> <span class="s2">"..."</span><span class="p">})</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">async</span> <span class="k">with</span> <span class="n">MyServiceBootstrap</span><span class="p">()</span> <span class="k">as</span> <span class="n">bootstrap</span><span class="p">:</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">repo</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="k">await</span> <span class="n">serve</span><span class="p">(</span><span class="n">ItemService</span><span class="p">(</span><span class="n">repo</span><span class="p">))</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="c1"># shutdown_all() then shutdown_telemetry() called automatically on __aexit__</span>
 </span></code></pre></div>
 <h3 id="as-a-fastapi-lifespan">As a FastAPI lifespan<a class="headerlink" href="#as-a-fastapi-lifespan" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">asynccontextmanager</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">bootstrap</span> <span class="o">=</span> <span class="n">MyServiceBootstrap</span><span class="p">()</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nd">@asynccontextmanager</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lifespan</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">FastAPI</span><span class="p">):</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">setup_telemetry</span><span class="p">()</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="k">await</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="k">yield</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="k">await</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span><span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">asynccontextmanager</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">bootstrap</span> <span class="o">=</span> <span class="n">ApplicationBootstrap</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">())</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="nd">@asynccontextmanager</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lifespan</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">FastAPI</span><span class="p">):</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">setup_telemetry</span><span class="p">()</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="k">await</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="k">yield</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="k">await</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span><span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span><span class="p">)</span>
 </span></code></pre></div>
-<h3 id="without-applicationbootstrap">Without ApplicationBootstrap<a class="headerlink" href="#without-applicationbootstrap" title="Permanent link">&para;</a></h3>
-<p><code>ApplicationBootstrap</code> is optional. You can manage <code>PluginRegistry</code> directly:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">PluginRegistry</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">PluginRegistry</span><span class="p">()</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PostgresItemRepository</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dsn&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">await</span> <span class="n">registry</span><span class="o">.</span><span class="n">initialize_all</span><span class="p">()</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">repo</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># ...</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">await</span> <span class="n">registry</span><span class="o">.</span><span class="n">shutdown_all</span><span class="p">()</span>
+<h3 id="the-registry-escape-hatch-multi-port-per-capability">The registry escape hatch — multi-port-per-capability<a class="headerlink" href="#the-registry-escape-hatch-multi-port-per-capability" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">async</span> <span class="k">with</span> <span class="n">ApplicationBootstrap</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">PrimaryPostgres</span><span class="p">(),</span> <span class="n">ReplicaPostgres</span><span class="p">())</span> <span class="k">as</span> <span class="n">bootstrap</span><span class="p">:</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">primary</span><span class="p">,</span> <span class="n">replica</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="n">Capability</span><span class="o">.</span><span class="n">PERSISTENCE</span><span class="p">)</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="c1"># or, equivalently: bootstrap.registry.get_all(Capability.PERSISTENCE)</span>
 </span></code></pre></div>
 
 
@@ -3280,7 +3334,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "search.share", "content.action.edit", "content.action.view", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../javascripts/extra.js"></script>
       

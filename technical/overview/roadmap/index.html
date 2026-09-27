@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3142,20 +3142,38 @@
 <hr />
 <h2 id="roadmap">Roadmap<a class="headerlink" href="#roadmap" title="Permanent link">&para;</a></h2>
 <h3 id="openframe-core">openframe-core<a class="headerlink" href="#openframe-core" title="Permanent link">&para;</a></h3>
+<p>Done since this was last updated:</p>
+<ul>
+<li><del>Establish <code>ApplicationBootstrap</code> as the recommended wiring path</del> —
+  resolved by consolidating to one class at three levels of ceremony
+  (<code>compose()</code> → subclass + <code>configure()</code> → <code>.registry</code> escape hatch)
+  instead of three competing patterns. See
+  <a href="../../architecture/design-decisions/">Design Decisions</a> and
+  <a href="../../../developer-guide/how-it-works/#choosing-a-wiring-pattern">How It Works § Choosing a Wiring Pattern</a>.</li>
+<li><del><code>test_middleware_types.py</code></del> — already existed (147 lines); this item
+  was stale.</li>
+<li><del>Remove redundant <code>pytest.ini</code></del> — already true; no <code>pytest.ini</code> exists,
+  only <code>[tool.pytest.ini_options]</code> in <code>pyproject.toml</code>. This item was
+  stale.</li>
+</ul>
 <p>Documentation tasks:</p>
 <ul>
-<li><strong>Establish <code>ApplicationBootstrap</code> as the recommended wiring path</strong> in
-  the developer guide and the <code>runtime</code> module doc. Document <code>PluginRegistry</code>
-  direct usage and <code>deps.py</code> + <code>lru_cache</code> as explicit alternatives with the
-  conditions under which you'd choose each. Without this, three equivalent-looking
-  patterns coexist with no hierarchy — see <a href="../../architecture/design-decisions/">Design Decisions</a>.</li>
+<li>(none currently open for <code>openframe-core</code> itself — see Lower-priority
+  items below)</li>
 </ul>
 <p>Lower-priority items:</p>
 <ul>
-<li><code>test_middleware_types.py</code> — add missing test file for ASGI type alias imports</li>
-<li>Remove redundant <code>pytest.ini</code> — configuration already present in <code>pyproject.toml</code></li>
-<li>Pin OTel SDK dev dependency to exact version — <code>conftest.py</code> accesses <code>_TRACER_PROVIDER_SET_ONCE._done</code> directly; a patch release could rename this attribute</li>
+<li>Pin OTel SDK dev dependency to exact version — <code>conftest.py</code>/<code>testing/fixtures.py</code>
+  accesses <code>_TRACER_PROVIDER_SET_ONCE._done</code> directly; a patch release
+  could rename this attribute</li>
 <li>Switch to Trusted Publishing on PyPI — remove <code>PYPI_API_TOKEN</code> secret, use OIDC via <code>pypa/gh-action-pypi-publish</code></li>
+<li>Consider whether <code>PluginNotFoundError</code>/<code>PluginInitializationError</code> should
+  actually be raised where their names imply (<code>PluginRegistry.get()</code>
+  currently raises a plain <code>KeyError</code>; <code>initialize_all()</code> re-raises the
+  original exception unwrapped) — both classes exist in the public
+  exception hierarchy but are dead code today. Not done as part of the
+  wiring-pattern consolidation since it's a behavioral change, not a
+  documentation fix.</li>
 </ul>
 <h3 id="openframe-adapters">openframe-adapters<a class="headerlink" href="#openframe-adapters" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3344,7 +3362,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "search.share", "content.action.edit", "content.action.view", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../javascripts/extra.js"></script>
       

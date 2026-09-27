@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2772,10 +2772,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pluginregistry-failures" class="md-nav__link">
+  <a href="#pluginregistry-applicationbootstrap-failures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        PluginRegistry Failures
+        PluginRegistry / ApplicationBootstrap Failures
       
     </span>
   </a>
@@ -2880,10 +2880,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pluginregistry-failures" class="md-nav__link">
+  <a href="#pluginregistry-applicationbootstrap-failures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        PluginRegistry Failures
+        PluginRegistry / ApplicationBootstrap Failures
       
     </span>
   </a>
@@ -3024,9 +3024,9 @@
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>[kafka.publish] broker timeout — caused by: asyncio.TimeoutError
 </span></code></pre></div>
 <p>The format <code>[adapter.operation]</code> tells you immediately which adapter failed and which operation was running. The <code>cause</code> field carries the original driver exception. All adapter errors also carry <code>code</code>, <code>severity</code>, and <code>retryable</code>:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>        <span class="c1"># &quot;adapter.timeout&quot;</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>        <span class="c1"># "adapter.timeout"</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">retryable</span><span class="p">)</span>   <span class="c1"># True</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">severity</span><span class="p">)</span>    <span class="c1"># &quot;ERROR&quot;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">severity</span><span class="p">)</span>    <span class="c1"># "ERROR"</span>
 </span></code></pre></div>
 <p>Catch at the appropriate specificity:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -3048,17 +3048,19 @@
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="c1"># Catch-all for plugin/registry failures too</span>
 </span></code></pre></div>
 <hr />
-<h2 id="pluginregistry-failures">PluginRegistry Failures<a class="headerlink" href="#pluginregistry-failures" title="Permanent link">&para;</a></h2>
-<p><strong><code>PluginNotFoundError</code></strong> — no port registered for the requested <code>Capability</code>. Verify <code>registry.register(port)</code> was called before <code>registry.get(Capability.X)</code>.</p>
-<p><strong><code>AmbiguousCapabilityError</code></strong> — more than one port registered for the capability passed to <code>get()</code>. Use <code>registry.get_all(Capability.X)</code> if multiple same-capability ports is intentional.</p>
-<p><strong><code>PluginInitializationError</code></strong> — a port's <code>initialize()</code> raised. The registry rolls back already-initialised ports before re-raising. Check the <code>cause</code> for the original error.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">PluginInitializationError</span>
+<h2 id="pluginregistry-applicationbootstrap-failures">PluginRegistry / ApplicationBootstrap Failures<a class="headerlink" href="#pluginregistry-applicationbootstrap-failures" title="Permanent link">&para;</a></h2>
+<p>These apply identically whether you're using <code>PluginRegistry</code> directly or through <code>ApplicationBootstrap</code> (<code>app.get(...)</code>, <code>app.start()</code>) — the bootstrap delegates straight through.</p>
+<p><strong><code>KeyError</code></strong> — no port registered for the requested <code>Capability</code>. Verify <code>register(port)</code> was called before <code>get(Capability.X)</code>. (Note: despite the exception hierarchy also defining a <code>PluginNotFoundError</code>, <code>get()</code> actually raises a plain <code>KeyError</code> — not that class.)</p>
+<p><strong><code>AmbiguousCapabilityError</code></strong> — more than one port registered for the capability passed to <code>get()</code>. Use <code>get_all(Capability.X)</code> if multiple same-capability ports is intentional (<code>ApplicationBootstrap.get_all()</code> or <code>registry.get_all()</code>).</p>
+<p><strong>Whatever <code>initialize()</code> raised</strong> — <code>initialize_all()</code> does <strong>not</strong> wrap a failing port's exception into a <code>PluginInitializationError</code> (that class exists in the exception hierarchy but nothing in <code>openframe-core</code> currently raises it). It rolls back already-initialised ports (LIFO) and then re-raises the original exception from <code>initialize()</code> completely unchanged — catch whatever your adapter actually raises, or <code>OpenFrameError</code> for the ecosystem-wide catch point if your adapters follow that convention:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenFrameError</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="k">try</span><span class="p">:</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">await</span> <span class="n">registry</span><span class="o">.</span><span class="n">initialize_all</span><span class="p">()</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="k">except</span> <span class="n">PluginInitializationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">plugin_name</span><span class="p">)</span>   <span class="c1"># which port failed</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">cause</span><span class="p">)</span>         <span class="c1"># original exception from initialize()</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">await</span> <span class="n">app</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>   <span class="c1"># or: await registry.initialize_all()</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="k">except</span> <span class="n">OpenFrameError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">exc</span><span class="o">.</span><span class="n">retryable</span><span class="p">)</span>   <span class="c1"># whatever the failing port's initialize() raised</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="k">except</span> <span class="ne">TimeoutError</span><span class="p">:</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"a port's init_timeout elapsed — see PluginRegistry(default_init_timeout=...)"</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="spans-not-appearing-in-otel-backend">Spans Not Appearing in OTel Backend<a class="headerlink" href="#spans-not-appearing-in-otel-backend" title="Permanent link">&para;</a></h2>
@@ -3075,7 +3077,7 @@
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  Field required [type=missing, ...]
 </span></code></pre></div>
 <p>A required env var is missing. Check which field failed, find the corresponding env var name (same as field name, case-insensitive), and set it.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">&quot;postgresql://user:pass@localhost/db&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">"postgresql://user:pass@localhost/db"</span>
 </span></code></pre></div>
 <hr />
 <h2 id="isinstance-check-returns-false">isinstance Check Returns False<a class="headerlink" href="#isinstance-check-returns-false" title="Permanent link">&para;</a></h2>
@@ -3089,8 +3091,8 @@
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openframe.core.telemetry</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_telemetry</span><span class="p">,</span> <span class="n">get_tracer</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">setup_telemetry</span><span class="p">()</span>          <span class="c1"># must be called first</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">proxy</span> <span class="o">=</span> <span class="n">TracingProxy</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="s2">&quot;repository.item&quot;</span><span class="p">)</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">await</span> <span class="n">proxy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span>     <span class="c1"># span created</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">proxy</span> <span class="o">=</span> <span class="n">TracingProxy</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="s2">"repository.item"</span><span class="p">)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">await</span> <span class="n">proxy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"abc"</span><span class="p">)</span>     <span class="c1"># span created</span>
 </span></code></pre></div>
 <p>In tests: install an <code>InMemorySpanExporter</code> and call <code>get_tracer.cache_clear()</code> after setting the provider. Without the cache clear, <code>get_tracer()</code> returns the old (no-op) tracer.</p>
 
@@ -3191,7 +3193,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "search.share", "content.action.edit", "content.action.view", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/extra.js"></script>
       

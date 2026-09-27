@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1405,10 +1405,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-application-wiring-options-unresolved-watch" class="md-nav__link">
+  <a href="#three-application-wiring-options-resolved" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Three Application Wiring Options (unresolved, watch)
+        Three Application Wiring Options (resolved)
       
     </span>
   </a>
@@ -2932,10 +2932,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-application-wiring-options-unresolved-watch" class="md-nav__link">
+  <a href="#three-application-wiring-options-resolved" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Three Application Wiring Options (unresolved, watch)
+        Three Application Wiring Options (resolved)
       
     </span>
   </a>
@@ -3088,38 +3088,40 @@
 <p><strong>Why:</strong> <code>BaseHTTPMiddleware</code> has documented limitations around streaming responses and request body access. It buffers responses, which prevents streaming use cases. Pure ASGI middleware receives the raw <code>send</code> callable and can intercept it with a thin wrapper (<code>send_with_telemetry</code>) that captures the status code without buffering.</p>
 <p><strong>Consequences:</strong> Route template extraction is less convenient — Starlette sets <code>scope["route"]</code> to a <code>Route</code> object only after routing completes; the raw path is used as a fallback. This increases metric cardinality for routes with path parameters but is the correct trade-off for framework independence.</p>
 <hr />
-<h2 id="three-application-wiring-options-unresolved-watch">Three Application Wiring Options (unresolved, watch)<a class="headerlink" href="#three-application-wiring-options-unresolved-watch" title="Permanent link">&para;</a></h2>
-<p>Three wiring patterns now coexist in <code>openframe-core</code>:</p>
+<h2 id="three-application-wiring-options-resolved">Three Application Wiring Options (resolved)<a class="headerlink" href="#three-application-wiring-options-resolved" title="Permanent link">&para;</a></h2>
+<p><strong>Resolved</strong> by consolidating to one class, <code>ApplicationBootstrap</code>, at
+three levels of ceremony, rather than three separate named patterns:</p>
 <ol>
-<li><strong><code>deps.py</code> + <code>lru_cache</code></strong> — module-level cached factory functions.
-   Simple, familiar, no framework. Most existing templates use this.</li>
-<li><strong><code>PluginRegistry</code> direct</strong> — explicit registry construction and
-   <code>initialize_all()</code> call in a <code>lifespan</code> handler. Full control, no
-   abstraction layer.</li>
-<li><strong><code>ApplicationBootstrap</code></strong> — subclass-based composition root. Manages
-   the <code>PluginRegistry</code> internally and adds <code>configure()</code> → <code>start()</code> →
-   <code>stop()</code> lifecycle.</li>
+<li><strong><code>ApplicationBootstrap.compose(*ports)</code></strong> — no subclass. The default
+   for a service with one or a few ports that don't need per-port
+   <code>config</code>/<code>init_timeout</code>.</li>
+<li><strong>Subclass + <code>configure()</code></strong> — once a port needs <code>config=</code>,
+   <code>init_timeout=</code>, or registration order that depends on a runtime
+   condition.</li>
+<li><strong><code>bootstrap.registry</code></strong> — the escape hatch, exposing the underlying
+   <code>PluginRegistry</code> directly for what tiers 1-2 don't cover (e.g.
+   <code>get_all()</code> for an intentional multi-port-per-capability setup,
+   <code>list_plugins()</code>).</li>
 </ol>
-<p>The ambiguity is better than before — <code>ApplicationBootstrap</code> has a name,
-a docstring, and the correct <code>stop()</code> behaviour (port shutdown +
-<code>shutdown_telemetry()</code>). But it is still three options without a clear
-hierarchy.</p>
-<p><strong>The risk:</strong> if the docs don't establish <code>ApplicationBootstrap</code> as the
-recommended path — with the other two documented as deliberate
-alternatives and the conditions under which you'd choose each — the
-ambiguity just gets more documented rather than actually resolved. A new
-adapter author reads the code and sees three equivalent-looking patterns
-with no signal about which to start from.</p>
-<p><strong>The resolution path:</strong> update the developer guide and the runtime module
-doc to name <code>ApplicationBootstrap</code> as the default starting point, and
-explain the two alternatives as escape hatches:</p>
-<ul>
-<li>Use <code>PluginRegistry</code> directly when you need fine-grained control over
-  initialization order or want to avoid the subclass pattern.</li>
-<li>Use <code>deps.py</code> + <code>lru_cache</code> when you're wiring a single port without a
-  full startup/shutdown lifecycle (e.g. a simple stateless function).</li>
-</ul>
-<p>This is tracked in the roadmap as a documentation task.</p>
+<p>What this replaced: <code>PluginRegistry</code> direct usage was previously
+documented as a competing pattern in its own right, mainly because
+<code>ApplicationBootstrap</code> had no <code>get_all()</code> and required a subclass even
+for a single port. Both gaps are now closed — <code>get_all()</code> was added to
+<code>ApplicationBootstrap</code>, and <code>compose()</code> covers the single/few-port case
+without a subclass. <code>deps.py</code> + <code>lru_cache</code> was never actually a
+<code>PluginRegistry</code>-integrated pattern (it typically skips calling
+<code>initialize()</code>/<code>shutdown()</code>/<code>health()</code> entirely) — it's no longer
+documented as a peer alternative; a service with zero real ports simply
+doesn't need a composition root at all, which is a different situation
+from "choosing between three wiring options."</p>
+<p><code>PluginRegistry</code> remains constructible directly for the one case that
+genuinely needs it: building a different composition root on top of
+<code>openframe-core</code>, not writing application code.</p>
+<p>Updated: <code>openframe/core/runtime/bootstrap.py</code>'s module and class
+docstrings, <code>docs/developer-guide/quick-start/index.md</code>,
+<code>docs/developer-guide/how-it-works.md</code> (new "Choosing a Wiring Pattern"
+section), <code>docs/developer-guide/explore.md</code>, <code>docs/developer-guide/debugging.md</code>,
+<code>docs/code/modules/runtime.md</code>.</p>
 <hr />
 <h2 id="ports-nine-module-dependency-chain-two-tier-structural-watch">ports/ Nine-Module Dependency Chain, Two-Tier (structural watch)<a class="headerlink" href="#ports-nine-module-dependency-chain-two-tier-structural-watch" title="Permanent link">&para;</a></h2>
 <p><code>openframe.core.ports</code> (previously split across <code>contracts/</code> and
@@ -3286,7 +3288,7 @@ be considered.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "search.share", "content.action.edit", "content.action.view", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../javascripts/extra.js"></script>
       
