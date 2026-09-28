@@ -11,6 +11,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v3.4.0 — 2026-09-28
+
+### Added
+
+- **`openframe.core.resilience.CircuitBreakerProxy`** (new module,
+  experimental) — zero-code async circuit breaker. Wraps any object and
+  short-circuits its async methods after `failure_threshold` consecutive
+  failures, raising `AdapterConnectionError` ("circuit open", retryable)
+  immediately instead of letting every caller block until
+  `operation_timeout` on every single call during a sustained outage.
+  Standard closed → open → half-open → closed/open state machine.
+  Mirrors `TracingProxy`'s exact wrapping mechanism (`__getattr__`
+  interception, fresh `getattr` resolution of the wrapped method on every
+  call, sync methods pass through unwrapped) so the two proxies compose
+  predictably — see the module docstring for the recommended composition
+  order (`CircuitBreakerProxy(TracingProxy(repo, ...), ...)`, not the
+  reverse, so a short-circuited call never produces a misleading adapter
+  span). Addresses a real gap: none of the four `openframe-adapters`
+  packages (or anything else in the ecosystem) previously had any
+  resilience pattern beyond "block until timeout, then raise."
+
+### Changed
+
+- **Graduated `PluginRegistry` and `ApplicationBootstrap` from `experimental`
+  to `stable`** (`openframe.core.plugins.registry`, `openframe.core.runtime.bootstrap`,
+  and their respective package `__init__.py` re-exports). Graduation
+  criteria: (1) all 7 `openframe-local-validation-framework` services
+  already depend on both in production-shaped code across multiple
+  releases with no breaking change required of them; (2) v3.3.0's
+  `ApplicationBootstrap.compose()`/`get_all()`/`registry` additions landed
+  as pure additive extensions on top of the existing contract — no
+  breaking change was needed to add meaningful new functionality, which is
+  itself evidence the contract shape is right. This is the first module in
+  `openframe-core` to graduate via an explicit, written criteria set
+  (documented in each module's own docstring) rather than an unstated
+  judgment call — future modules going through the same
+  experimental→stable path should record their own criteria the same way.
+
+---
+
 ## v3.3.0 — 2026-09-28
 
 ### Added
@@ -385,7 +425,8 @@ Dev dependencies: `pytest>=8.0`, `pytest-asyncio>=0.23`, `httpx>=0.27`.
 
 ---
 
-[Unreleased]: https://github.com/openframe-org/openframe-core/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/openframe-org/openframe-core/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/openframe-org/openframe-core/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/openframe-org/openframe-core/compare/v3.2.1...v3.3.0
 [3.2.1]: https://github.com/openframe-org/openframe-core/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/openframe-org/openframe-core/compare/v3.1.0...v3.2.0
