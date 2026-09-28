@@ -9,10 +9,10 @@ plugin protocol. This package re-exports the ``ports`` types
 :class:`~openframe.core.plugins.registry.PluginRegistry` operates on for
 convenience, plus the registry itself.
 
-All symbols are **experimental** in v3.0 and will stabilise based on real
-usage.
+Stable as of v3.3.0 — see ``PluginRegistry``'s own module docstring
+(``openframe.core.plugins.registry``) for the graduation rationale.
 
-.. stability: experimental
+.. stability: stable
 """
 from __future__ import annotations
 

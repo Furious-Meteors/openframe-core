@@ -17,10 +17,14 @@ correct shutdown ordering (ports then ``shutdown_telemetry()``). Use
 initialization order or are building a framework layer on top of
 openframe-core.
 
-All symbols are **experimental** in v3.0.
+Stable as of v3.3.0 — graduated from experimental after all 7
+``openframe-local-validation-framework`` services proved it in
+production-shaped code across multiple releases with no breaking change,
+and the v3.3.0 ``ApplicationBootstrap.compose()``/``get_all()``/``registry``
+additions landed as pure additive extensions on top of this contract,
+confirming the shape was already right.
 
-.. stability: experimental
-   Experimental — API may change or be removed in any version.
+.. stability: stable
 
 Dependency order:
     ports            → (apex; no plugins/registry-side imports)
@@ -52,7 +56,7 @@ if TYPE_CHECKING:
 
 __all__ = ["PluginRegistry"]
 
-__stability__ = "experimental"
+__stability__ = "stable"
 
 _log = logging.getLogger(__name__)
 
@@ -75,7 +79,7 @@ class PluginRegistry:
     control over initialization order, or when building a framework layer
     that manages the registry lifecycle itself.
 
-    .. stability: experimental
+    .. stability: stable
 
     Direct usage::
 

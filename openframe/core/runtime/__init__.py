@@ -12,7 +12,10 @@ See ``openframe.core.plugins.PluginRegistry`` if you need fine-grained
 control over initialization order or want to manage the registry lifecycle
 directly without the composition abstraction.
 
-.. stability: experimental
+Stable as of v3.3.0 — see ``ApplicationBootstrap``'s own module docstring
+(``openframe.core.runtime.bootstrap``) for the graduation rationale.
+
+.. stability: stable
 """
 from __future__ import annotations
 

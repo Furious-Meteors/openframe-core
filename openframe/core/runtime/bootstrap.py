@@ -26,10 +26,14 @@ intentionally no separate ``PluginRegistry``-direct or ``deps.py``+``lru_cache``
 like when hand-rolled, minus the correct shutdown ordering tier 1-3 give you
 for free.
 
-All symbols are **experimental** in v3.0.
+Stable as of v3.3.0 — graduated from experimental after all 7
+``openframe-local-validation-framework`` services proved it in
+production-shaped code across multiple releases with no breaking change,
+and the v3.3.0 ``compose()``/``get_all()``/``registry`` additions landed
+as pure additive extensions on top of this contract, confirming the shape
+was already right.
 
-.. stability: experimental
-   Experimental — API may change or be removed in any version.
+.. stability: stable
 
 Dependency order:
     ports             → (apex)
@@ -49,7 +53,7 @@ if TYPE_CHECKING:
 
 __all__ = ["ApplicationBootstrap"]
 
-__stability__ = "experimental"
+__stability__ = "stable"
 
 
 class ApplicationBootstrap:
@@ -63,7 +67,7 @@ class ApplicationBootstrap:
     the OTel SDK is flushed via ``shutdown_telemetry()`` so no spans are
     silently dropped at process exit.
 
-    .. stability: experimental
+    .. stability: stable
 
     **Tier 1 — no subclass, one or a few ports**::
 
