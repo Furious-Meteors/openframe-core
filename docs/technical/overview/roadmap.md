@@ -56,6 +56,19 @@ Lower-priority items:
 
 ## Changelog
 
+## v3.3.0 — ApplicationBootstrap.compose()/get_all()/registry, port init timeouts (non-breaking)
+
+> Resolves the "three application wiring options" ambiguity tracked above by consolidating to one recommended class (`ApplicationBootstrap`) at three levels of ceremony. See [Design Decisions](../architecture/design-decisions.md) and [How It Works § Choosing a Wiring Pattern](../../developer-guide/how-it-works.md#choosing-a-wiring-pattern).
+
+- `ApplicationBootstrap.compose(*ports)` — new classmethod; zero-subclass entry point for a service with one or a few ports.
+- `ApplicationBootstrap.get_all(capability)` — new method, mirrors `PluginRegistry.get_all()`.
+- `ApplicationBootstrap.registry` — new read-only property exposing the underlying `PluginRegistry`.
+- `PluginRegistry(default_init_timeout=...)` / `register(..., init_timeout=...)` (mirrored on `ApplicationBootstrap`) — bound how long `initialize_all()` waits for a port's `initialize()`. Both default to `None` (no timeout) — fully backward-compatible.
+- Fixed: `TracingProxy`'s `asyncio.iscoroutinefunction` deprecation; `AmbiguousCapabilityError` now mirrors `capability`/`matches` into `context`.
+- Full changelog: [`.github/CHANGELOG.md`](../../../.github/CHANGELOG.md#v330--2026-09-28).
+
+---
+
 ## v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)
 
 > Ecosystem packages pinned `openframe-core>=3.0,<4`; `openframe-adapters` has migrated its imports to `openframe.core.ports`.
