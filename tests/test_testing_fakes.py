@@ -8,6 +8,12 @@ Structure
 - ``TestInMemoryRepositoryConformance`` — passes the full
   :class:`~openframe.core.testing.RepositoryContractTests` suite
   (including the inherited ``BasePort`` identity/lifecycle checks).
+- ``TestInMemoryVectorStoreConformance`` — passes the full
+  :class:`~openframe.core.testing.VectorStoreContractTests` suite
+  (including everything ``RepositoryContractTests`` itself requires).
+- ``TestInMemoryGraphStoreConformance`` — passes the full
+  :class:`~openframe.core.testing.GraphStoreContractTests` suite
+  (including everything ``RepositoryContractTests`` itself requires).
 - ``TestFakeProducerConformance``        — passes the full
   :class:`~openframe.core.testing.ProducerContractTests` suite.
 - ``TestFakeConsumerConformance``        — passes the full
@@ -25,9 +31,13 @@ from openframe.core.testing import (
     ConsumerContractTests,
     FakeConsumer,
     FakeProducer,
+    GraphStoreContractTests,
+    InMemoryGraphStore,
     InMemoryRepository,
+    InMemoryVectorStore,
     ProducerContractTests,
     RepositoryContractTests,
+    VectorStoreContractTests,
 )
 
 
@@ -57,6 +67,75 @@ class TestInMemoryRepositoryConformance(RepositoryContractTests):
             return {"id": id, "name": name}
 
         return _make
+
+
+# ---------------------------------------------------------------------------
+# InMemoryVectorStore — contract conformance
+# ---------------------------------------------------------------------------
+
+
+class TestInMemoryVectorStoreConformance(VectorStoreContractTests):
+    """InMemoryVectorStore must pass the full VectorStoreContractTests suite."""
+
+    @pytest.fixture
+    def repository(self) -> InMemoryVectorStore:
+        """Provide a fresh InMemoryVectorStore for each test."""
+        return InMemoryVectorStore()
+
+    @pytest.fixture
+    def port(self, repository: InMemoryVectorStore) -> InMemoryVectorStore:
+        """Alias for the inherited PortContractTests identity/lifecycle checks."""
+        return repository
+
+    @pytest.fixture
+    def make_entity(self):
+        """Produce dict entities with 'id', 'name', and 'vector' keys."""
+
+        def _make(id: str, name: str = "test", vector: list[float] | None = None) -> dict:
+            return {"id": id, "name": name, "vector": vector or [1.0, 0.0, 0.0]}
+
+        return _make
+
+    @pytest.fixture
+    def entity_vector(self):
+        """Extract the stored vector back out of a dict entity."""
+        return lambda entity: entity["vector"]
+
+
+# ---------------------------------------------------------------------------
+# InMemoryGraphStore — contract conformance
+# ---------------------------------------------------------------------------
+
+
+class TestInMemoryGraphStoreConformance(GraphStoreContractTests):
+    """InMemoryGraphStore must pass the full GraphStoreContractTests suite."""
+
+    @pytest.fixture
+    def repository(self) -> InMemoryGraphStore:
+        """Provide a fresh InMemoryGraphStore for each test."""
+        return InMemoryGraphStore()
+
+    @pytest.fixture
+    def port(self, repository: InMemoryGraphStore) -> InMemoryGraphStore:
+        """Alias for the inherited PortContractTests identity/lifecycle checks."""
+        return repository
+
+    @pytest.fixture
+    def make_entity(self):
+        """Produce dict entities with 'id' and 'name' keys."""
+
+        def _make(id: str, name: str = "test") -> dict:
+            return {"id": id, "name": name}
+
+        return _make
+
+    @pytest.fixture
+    def traverse_query_for(self):
+        """Build a (query, params) pair that filters by the entity's id."""
+        return lambda entity: (
+            "MATCH (n) WHERE n.id = $id RETURN n",
+            {"id": entity["id"]},
+        )
 
 
 # ---------------------------------------------------------------------------
