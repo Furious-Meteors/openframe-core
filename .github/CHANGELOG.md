@@ -11,6 +11,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v3.6.0 — 2026-10-09
+
+### Added
+
+- **`openframe.core.ports.BaseGraphStore[T]`** — a new outbound port for
+  graph-store adapters (FalkorDB and similar), defined in
+  `ports/outbound/repository.py` alongside `BaseRepository`/
+  `BaseVectorStore` — same rationale as `BaseVectorStore` for staying in
+  this file rather than its own. Extends `BaseRepository[T]` directly:
+  a graph database's nodes are genuinely id-addressable
+  (create/get/update/delete map onto real `CREATE`/`MATCH ... WHERE
+  n.<key> = $id`/`SET`/`DETACH DELETE` operations), provided the adapter
+  addresses nodes by an application-level unique property (with a
+  backing index/constraint the adapter itself must create) rather than
+  a backend-internal node identity. FalkorDB's own `id()` function is
+  explicitly documented upstream as unstable — deleted nodes' higher
+  internal ids can be migrated down to fill vacated lower ones — which
+  is exactly why adapters must key off their own property, not a reason
+  graph databases don't fit this port. The one operation with no CRUD
+  equivalent is pattern-matching/traversal, so `BaseGraphStore` adds
+  exactly one new method, `traverse(query, params) -> list[T]`, which
+  also serves as the only way to create or query relationships/edges —
+  this port deliberately does not give edges their own method, the same
+  way it does not invent a bespoke query language. Marked
+  `.. stability: experimental`, same as `BaseVectorStore`;
+  `BaseRepository` itself is unaffected and remains stable.
+- **`openframe.core.testing.GraphStoreContractTests`** — extends
+  `RepositoryContractTests` (inherits the full CRUD suite), adds four
+  `traverse()`-specific tests plus a `BaseGraphStore` protocol
+  conformance check. Deliberately query-language-agnostic: rather than
+  hardcoding Cypher syntax, it asks a `traverse_query_for(entity)`
+  fixture for a `(query, params)` pair in whatever language the adapter
+  under test actually speaks — mirroring how `VectorStoreContractTests`
+  asks for an `entity_vector` extractor instead of assuming a specific
+  similarity metric.
+- **`openframe.core.testing.InMemoryGraphStore`** — the matching fake,
+  extending `InMemoryRepository`. Its own `traverse()` is a toy lookup
+  (recognizes a `params["id"]` convention; the `query` string itself is
+  accepted but not interpreted) proving the contract's *shape*, not a
+  query-engine simulation.
+- 27 new tests (23 inherited `RepositoryContractTests`/`PortContractTests`
+  assertions re-run against `InMemoryGraphStore`, plus 4
+  `traverse()`-specific tests). Full suite: 410 passing (up from 383).
+
+---
+
+## v3.5.0 — 2026-10-08
+
+### Added
+
+- **`openframe.core.ports.BaseVectorStore[T]`** — a new outbound port for
+  vector-store adapters (Milvus, Qdrant, ChromaDB), defined in
+  `ports/outbound/repository.py` alongside `BaseRepository` (not its own
+  file — deliberately, so the "why this extends `BaseRepository`"
+  rationale lives next to both classes it concerns). Extends
+  `BaseRepository[T]` directly rather than sitting as a disjoint sibling
+  port — most vector databases are genuinely id-addressable
+  (insert/upsert-with-id, fetch-by-id, delete-by-id, list/scroll), so the
+  five inherited CRUD methods are real operations for them, not fakes
+  forced to satisfy an interface. Adds exactly one new method,
+  `search(query_vector, k) -> list[T]`, the one operation with no
+  equivalent in `BaseRepository`. A vector store satisfying
+  `BaseVectorStore` also satisfies `BaseRepository` for free. Explicitly
+  does **not** target FAISS (a bare in-process index with no native
+  id→metadata store, and some index types that don't support deletion
+  without a full rebuild) or FalkorDB (fundamentally graph-oriented, not
+  id-addressable the same way) — both were evaluated and excluded;
+  graph databases need their own separate port design, not a forced fit
+  here.
+- **`openframe.core.testing.contracts.VectorStoreContractTests`** — the
+  matching contract-test mixin, extending `RepositoryContractTests`
+  (inherits all its CRUD assertions, adds four search-specific ones).
+  Deliberately metric-agnostic: every search assertion uses an
+  exact-match query vector rather than asserting a specific similarity
+  score or ranking among near-ties, since backends default to different
+  metrics (cosine, L2, dot product) that would legitimately rank
+  approximately-similar vectors differently — an exact match ranks
+  first under any reasonable metric, so that's what the contract tests
+  rely on.
+- **`openframe.core.testing.fakes.InMemoryVectorStore`** — the matching
+  fake, extending `InMemoryRepository` unchanged and adding a
+  brute-force Euclidean-distance `search()`. Proven against the full
+  `VectorStoreContractTests` suite in this release's own test suite
+  (27 new tests: 23 inherited CRUD/identity/lifecycle + 4 search-specific).
+- All three pieces are `experimental` — new port, new contract-test
+  mixin, new fake, all added together ahead of the first real adapter
+  packages that will implement `BaseVectorStore` (Milvus, Qdrant,
+  ChromaDB).
+
+---
+
 ## v3.4.0 — 2026-09-28
 
 ### Added
@@ -425,7 +516,9 @@ Dev dependencies: `pytest>=8.0`, `pytest-asyncio>=0.23`, `httpx>=0.27`.
 
 ---
 
-[Unreleased]: https://github.com/openframe-org/openframe-core/compare/v3.4.0...HEAD
+[Unreleased]: https://github.com/openframe-org/openframe-core/compare/v3.6.0...HEAD
+[3.6.0]: https://github.com/openframe-org/openframe-core/compare/v3.5.0...v3.6.0
+[3.5.0]: https://github.com/openframe-org/openframe-core/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/openframe-org/openframe-core/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/openframe-org/openframe-core/compare/v3.2.1...v3.3.0
 [3.2.1]: https://github.com/openframe-org/openframe-core/compare/v3.2.0...v3.2.1
