@@ -7,6 +7,12 @@ Outbound: ``PortContractTests``/``LifecycleContractTests`` cover the
 shared ``BasePort`` identity/lifecycle suite; ``RepositoryContractTests``,
 ``ProducerContractTests``, ``ConsumerContractTests`` build on
 ``PortContractTests`` with domain-specific assertions.
+``VectorStoreContractTests`` builds on ``RepositoryContractTests`` itself
+(not directly on ``PortContractTests``), adding search-specific
+assertions — mirroring how ``BaseVectorStore`` extends ``BaseRepository``.
+``GraphStoreContractTests`` likewise builds on ``RepositoryContractTests``,
+adding traverse-specific assertions — mirroring how ``BaseGraphStore``
+extends ``BaseRepository``.
 
 Inbound: ``UseCaseContractTests``, ``CommandHandlerContractTests``,
 ``QueryHandlerContractTests`` mirror the outbound contract classes for
@@ -22,6 +28,7 @@ pytest installed.
 from __future__ import annotations
 
 from openframe.core.testing.contracts.consumer import ConsumerContractTests
+from openframe.core.testing.contracts.graph_store import GraphStoreContractTests
 from openframe.core.testing.contracts.inbound import (
     CommandHandlerContractTests,
     QueryHandlerContractTests,
@@ -31,11 +38,14 @@ from openframe.core.testing.contracts.lifecycle import LifecycleContractTests
 from openframe.core.testing.contracts.port import PortContractTests
 from openframe.core.testing.contracts.producer import ProducerContractTests
 from openframe.core.testing.contracts.repository import RepositoryContractTests
+from openframe.core.testing.contracts.vector_store import VectorStoreContractTests
 
 __all__ = [
     "LifecycleContractTests",
     "PortContractTests",
     "RepositoryContractTests",
+    "VectorStoreContractTests",
+    "GraphStoreContractTests",
     "ProducerContractTests",
     "ConsumerContractTests",
     "UseCaseContractTests",

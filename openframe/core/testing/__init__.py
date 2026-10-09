@@ -33,6 +33,7 @@ Quick reference::
 from __future__ import annotations
 
 from openframe.core.testing.contracts.consumer import ConsumerContractTests
+from openframe.core.testing.contracts.graph_store import GraphStoreContractTests
 from openframe.core.testing.contracts.inbound import (
     CommandHandlerContractTests,
     QueryHandlerContractTests,
@@ -42,7 +43,9 @@ from openframe.core.testing.contracts.lifecycle import LifecycleContractTests
 from openframe.core.testing.contracts.port import PortContractTests
 from openframe.core.testing.contracts.producer import ProducerContractTests
 from openframe.core.testing.contracts.repository import RepositoryContractTests
+from openframe.core.testing.contracts.vector_store import VectorStoreContractTests
 from openframe.core.testing.fakes.consumer import FakeConsumer
+from openframe.core.testing.fakes.graph_store import InMemoryGraphStore
 from openframe.core.testing.fakes.inbound import (
     EchoUseCase,
     SpyCommandHandler,
@@ -50,9 +53,12 @@ from openframe.core.testing.fakes.inbound import (
 )
 from openframe.core.testing.fakes.producer import FakeProducer
 from openframe.core.testing.fakes.repository import InMemoryRepository
+from openframe.core.testing.fakes.vector_store import InMemoryVectorStore
 
 __all__ = [
     "InMemoryRepository",
+    "InMemoryVectorStore",
+    "InMemoryGraphStore",
     "FakeProducer",
     "FakeConsumer",
     "EchoUseCase",
@@ -61,6 +67,8 @@ __all__ = [
     "LifecycleContractTests",
     "PortContractTests",
     "RepositoryContractTests",
+    "VectorStoreContractTests",
+    "GraphStoreContractTests",
     "ProducerContractTests",
     "ConsumerContractTests",
     "UseCaseContractTests",

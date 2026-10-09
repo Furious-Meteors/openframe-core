@@ -18,6 +18,7 @@ record every call for spy-style assertions.
 from __future__ import annotations
 
 from openframe.core.testing.fakes.consumer import FakeConsumer
+from openframe.core.testing.fakes.graph_store import InMemoryGraphStore
 from openframe.core.testing.fakes.inbound import (
     EchoUseCase,
     SpyCommandHandler,
@@ -25,9 +26,12 @@ from openframe.core.testing.fakes.inbound import (
 )
 from openframe.core.testing.fakes.producer import FakeProducer
 from openframe.core.testing.fakes.repository import InMemoryRepository
+from openframe.core.testing.fakes.vector_store import InMemoryVectorStore
 
 __all__ = [
     "InMemoryRepository",
+    "InMemoryVectorStore",
+    "InMemoryGraphStore",
     "FakeProducer",
     "FakeConsumer",
     "EchoUseCase",

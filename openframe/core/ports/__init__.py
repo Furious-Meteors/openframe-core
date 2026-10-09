@@ -29,7 +29,7 @@ old ``openframe.core.contracts`` path — update all imports to
 top of BasePort, defined in ``ports/outbound/`` (see that sub-module's
 docstring for the intake rule on future capabilities)::
 
-    from openframe.core.ports import BaseRepository, BaseProducer, BaseConsumer
+    from openframe.core.ports import BaseRepository, BaseProducer, BaseConsumer, BaseVectorStore, BaseGraphStore
 
 Runtime isinstance checks::
 
@@ -43,7 +43,13 @@ from openframe.core.ports.context import PrincipalContext, TenantContext
 from openframe.core.ports.health import PluginContext, PluginHealth, PluginStatus
 from openframe.core.ports.identity import Identity
 from openframe.core.ports.lifecycle import Lifecycle
-from openframe.core.ports.outbound import BaseConsumer, BaseProducer, BaseRepository
+from openframe.core.ports.outbound import (
+    BaseConsumer,
+    BaseGraphStore,
+    BaseProducer,
+    BaseRepository,
+    BaseVectorStore,
+)
 from openframe.core.ports.port import BasePort
 
 __all__ = [
@@ -61,4 +67,6 @@ __all__ = [
     "BaseRepository",
     "BaseProducer",
     "BaseConsumer",
+    "BaseVectorStore",
+    "BaseGraphStore",
 ]

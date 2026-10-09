@@ -23,6 +23,45 @@ Runtime isinstance check::
 The parameterised form is a static-analysis-only annotation. At runtime,
 always check against the unparameterised ``BaseRepository``.
 
+This module also defines :class:`BaseVectorStore`, which extends
+``BaseRepository`` directly rather than sitting in its own file or as a
+disjoint sibling port (the way ``BaseProducer``/``BaseConsumer`` are
+siblings of ``BaseRepository``, not subtypes). Most vector databases ARE
+genuinely id-addressable — insert/upsert-with-id, fetch-by-id,
+delete-by-id, list/scroll — so the five CRUD methods below are real
+operations for them too, not fakes forced to satisfy an interface. The
+only operation with no equivalent here is similarity search, so
+``BaseVectorStore`` adds exactly one new method, :meth:`BaseVectorStore.search`,
+on top of everything below. A vector store that satisfies
+``BaseVectorStore`` also satisfies ``BaseRepository`` for free — existing
+code written against ``BaseRepository`` keeps working unmodified against
+a vector-backed implementation.
+
+``BaseVectorStore`` is deliberately not a universal fit for every
+vector backend. FAISS (a bare in-process index with no native
+id→metadata store, and some index types that don't support deletion
+without a full rebuild) was evaluated and explicitly excluded from this
+port's intended adopters.
+
+This module also defines :class:`BaseGraphStore`, which — like
+``BaseVectorStore`` — extends ``BaseRepository`` directly. A graph
+database's nodes ARE genuinely id-addressable: create/get/update/delete
+map onto real `CREATE`/`MATCH ... WHERE n.<key> = $id`/`SET`/`DETACH
+DELETE` operations, provided the adapter addresses nodes by an
+application-level unique property (with a backing index/constraint the
+adapter is responsible for creating), not a backend-internal node
+identity. FalkorDB's own ``id()`` function is explicitly documented as
+unstable — deleted nodes' higher internal ids can be migrated down to
+fill vacated lower ones — so it is unsuitable as this port's addressing
+key; this is exactly why adapters must key off their own property, not
+why graph databases don't fit this port at all. The one operation with
+no CRUD equivalent is traversal/pattern-matching, so ``BaseGraphStore``
+adds exactly one new method, :meth:`BaseGraphStore.traverse`, which also
+serves as the escape hatch for relationship/edge creation and querying
+(Cypher's ``CREATE``/``MATCH`` handle nodes and edges in the same
+statement) — this port does not model edges as their own first-class
+method, the same way it does not invent a bespoke query language.
+
 Dependency order:
     ports/port                → ports/identity + ports/lifecycle
     ports/outbound/repository → ports/port
@@ -33,7 +72,7 @@ from typing import Protocol, TypeVar, runtime_checkable
 
 from openframe.core.ports.port import BasePort
 
-__all__ = ["BaseRepository"]
+__all__ = ["BaseRepository", "BaseVectorStore", "BaseGraphStore"]
 
 T = TypeVar("T")
 
@@ -154,5 +193,180 @@ class BaseRepository(BasePort, Protocol[T]):
             AdapterConnectionError: If the backend is unreachable.
             AdapterQueryError:      If the deletion fails.
             AdapterTimeoutError:    If the operation exceeds ``operation_timeout``.
+        """
+        ...
+
+
+@runtime_checkable
+class BaseVectorStore(BaseRepository[T], Protocol[T]):
+    """
+    Generic vector store port. ``BaseRepository[T]`` (id-addressable CRUD)
+    plus one additional domain method, :meth:`search`.
+
+    See this module's own docstring for why this extends ``BaseRepository``
+    directly rather than being a disjoint sibling port, and why FAISS/
+    FalkorDB are explicitly excluded from this port's intended adopters.
+
+    Adapters implement this protocol structurally — no inheritance needed.
+    Any class with matching async method signatures, plus everything
+    ``BaseRepository``/``BasePort`` require, satisfies ``BaseVectorStore``.
+
+    Type parameter ``T`` is the domain entity the vector store manages —
+    typically a dataclass or Pydantic model carrying an id, an embedding
+    vector, and whatever metadata fields the caller's domain needs.
+
+    .. stability: experimental
+       New port, added alongside the first vector-store adapter packages.
+       API may change based on real usage. ``BaseRepository`` above is
+       unaffected by this — it remains stable; only ``BaseVectorStore``
+       itself is experimental.
+
+    Runtime check::
+
+        isinstance(store, BaseVectorStore)   # ✓ works
+        isinstance(store, BaseRepository)    # ✓ also true
+
+    Inherited from ``BaseRepository[T]`` — id-addressable CRUD:
+        get:    Fetch a single entity by id.
+        list:   Return a paginated slice plus total count.
+        create: Upsert a new entity (most vector DBs treat insert as
+                upsert-by-id natively; adapters document their own
+                create-vs-upsert semantics if they diverge).
+        update: Upsert an existing entity's vector/metadata.
+        delete: Remove an entity by id.
+
+    New in this port:
+        search: Similarity search — the operation ``BaseRepository`` has
+                no equivalent for.
+
+    Plus, inherited from ``BasePort`` (via ``BaseRepository``): ``name``,
+    ``version``, ``capability``, ``initialize``, ``shutdown``, ``health``.
+    """
+
+    async def search(self, query_vector: list[float], k: int) -> list[T]:
+        """
+        Return the ``k`` entities whose vectors are most similar to
+        ``query_vector``.
+
+        The distance/similarity metric (cosine, L2, dot product, ...) is
+        an adapter/backend-level configuration concern, not part of this
+        port's signature — different backends default to different
+        metrics, and some let it be configured per-collection at index
+        creation time. Document the active metric in the adapter's own
+        docstring.
+
+        Args:
+            query_vector: The embedding to search against. Must match the
+                          dimensionality the backend collection/index was
+                          created with — a mismatch is a configuration
+                          error, not a query error, but adapters may
+                          surface it as either depending on when the
+                          backend itself detects it.
+            k: Maximum number of results to return, ordered from most to
+               least similar. Returning fewer than ``k`` results (if the
+               collection has fewer than ``k`` entities, or the backend
+               applies its own relevance cutoff) is not an error.
+
+        Returns:
+            Up to ``k`` entities, ordered from most to least similar.
+            Empty list if nothing matches (never ``None`` — unlike
+            ``get()``, "no results" is a normal outcome of a search, not
+            a not-found case).
+
+        Raises:
+            AdapterConnectionError:    If the backend is unreachable.
+            AdapterQueryError:         If the query fails (e.g.
+                                       ``query_vector``'s dimensionality
+                                       doesn't match the collection).
+            AdapterTimeoutError:       If the operation exceeds
+                                       ``operation_timeout``.
+        """
+        ...
+
+
+@runtime_checkable
+class BaseGraphStore(BaseRepository[T], Protocol[T]):
+    """
+    Generic graph store port. ``BaseRepository[T]`` (id-addressable node
+    CRUD) plus one additional domain method, :meth:`traverse`.
+
+    See this module's own docstring for why this extends ``BaseRepository``
+    directly rather than being a disjoint sibling port, why FalkorDB's
+    internal ``id()`` is not a suitable addressing key, and why
+    relationships/edges are not given their own port method.
+
+    Adapters implement this protocol structurally — no inheritance needed.
+    Any class with matching async method signatures, plus everything
+    ``BaseRepository``/``BasePort`` require, satisfies ``BaseGraphStore``.
+
+    Type parameter ``T`` is the domain entity representing a **node** —
+    typically a dataclass or Pydantic model carrying an application-level
+    unique id, labels, and whatever properties the caller's domain needs.
+    Edges are not modeled by ``T`` or by any method on this port; they are
+    created and queried exclusively through :meth:`traverse`.
+
+    .. stability: experimental
+       New port, added alongside the first graph-store adapter packages.
+       API may change based on real usage. ``BaseRepository`` above is
+       unaffected by this — it remains stable; only ``BaseGraphStore``
+       itself is experimental.
+
+    Runtime check::
+
+        isinstance(store, BaseGraphStore)    # ✓ works
+        isinstance(store, BaseRepository)    # ✓ also true
+
+    Inherited from ``BaseRepository[T]`` — id-addressable node CRUD:
+        get:    Fetch a single node by its application-level id.
+        list:   Return a paginated slice of nodes plus total count.
+        create: Create a new node. Adapters are responsible for ensuring
+                a unique constraint/index exists on the id property they
+                address nodes by — without one, every get/update/delete
+                degrades to an unindexed label scan.
+        update: Update an existing node's properties.
+        delete: Remove a node by id. Adapters should detach (remove
+                incident edges) before deleting, since most graph backends
+                reject deleting a node that still has relationships.
+
+    New in this port:
+        traverse: Arbitrary pattern-matching/traversal query — the
+                  operation ``BaseRepository`` has no equivalent for, and
+                  also the only way to create, update, or query edges.
+
+    Plus, inherited from ``BasePort`` (via ``BaseRepository``): ``name``,
+    ``version``, ``capability``, ``initialize``, ``shutdown``, ``health``.
+    """
+
+    async def traverse(
+        self, query: str, params: dict[str, object] | None = None
+    ) -> list[T]:
+        """
+        Execute an arbitrary pattern-matching/traversal query against the
+        graph and return the matching entities.
+
+        This is the escape hatch for everything ``BaseRepository``'s CRUD
+        methods cannot express: multi-hop traversals, relationship/edge
+        creation and querying, variable-length paths, aggregations. The
+        query language itself (Cypher, Gremlin, ...) is an adapter/backend
+        concern, not part of this port's signature — adapters document
+        which language their ``query`` argument expects.
+
+        Args:
+            query:  A query string in the backend's native query language.
+            params: Named parameters substituted into the query, keyed by
+                    name as the backend's driver expects. None if the
+                    query has no parameters.
+
+        Returns:
+            The entities the query's `RETURN`-equivalent clause produces.
+            Empty list if the query matches nothing (not an error).
+
+        Raises:
+            AdapterConnectionError: If the backend is unreachable.
+            AdapterQueryError:      If the query is malformed or fails
+                                     (e.g. a syntax error, or a
+                                     constraint violation on a write).
+            AdapterTimeoutError:    If the operation exceeds
+                                     ``operation_timeout``.
         """
         ...
