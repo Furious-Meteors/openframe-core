@@ -37,6 +37,10 @@ from openframe.core.testing.contracts.inbound import (
 from openframe.core.testing.contracts.lifecycle import LifecycleContractTests
 from openframe.core.testing.contracts.port import PortContractTests
 from openframe.core.testing.contracts.producer import ProducerContractTests
+from openframe.core.testing.contracts.remote import (
+    RemoteCommandClientContractTests,
+    RemoteQueryClientContractTests,
+)
 from openframe.core.testing.contracts.repository import RepositoryContractTests
 from openframe.core.testing.contracts.vector_store import VectorStoreContractTests
 
@@ -51,4 +55,6 @@ __all__ = [
     "UseCaseContractTests",
     "CommandHandlerContractTests",
     "QueryHandlerContractTests",
+    "RemoteCommandClientContractTests",
+    "RemoteQueryClientContractTests",
 ]
