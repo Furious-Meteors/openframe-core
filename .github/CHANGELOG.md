@@ -11,6 +11,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v3.7.0 — 2026-10-11
+
+### Added
+
+- **`openframe.core.remote`** — `RemoteCommandClient[TIn]`/
+  `RemoteQueryClient[TIn, TOut]`, the outbound counterparts of
+  `openframe.core.inbound`'s `CommandHandler`/`QueryHandler`, for
+  `openframe-protocol`'s M1b (HTTP client, service-to-service calls).
+  Structurally identical `execute(input, context) -> result` shape to
+  the inbound pair, but deliberately separate Protocol classes in their
+  own module — direction matters even when the signature doesn't
+  differ, and conflating "something calls into me" with "I call out to
+  something" under one name would erase the distinction this
+  ecosystem's whole organising principle rests on. No `BasePort`/
+  `Identity`/`Capability` involvement: `openframe-protocol`'s own design
+  review (draft 8, decision D10) found no dynamic "give me whichever
+  remote client fills this role" lookup use case exists — a caller
+  always knows exactly which service it's calling — so none of the
+  machinery justifying `Capability`-based registry lookup applies here.
+  Wired by direct construction in a service's own `bootstrap`, the same
+  way `CommandHandler`/`QueryHandler` themselves are never looked up by
+  capability.
+- **`openframe.core.testing.RemoteCommandClientContractTests`/
+  `RemoteQueryClientContractTests`** — extend the existing
+  `CommandHandlerContractTests`/`QueryHandlerContractTests` rather than
+  duplicating their test bodies (only the `isinstance` assertion
+  differs). No new fakes needed either — `SpyCommandHandler`/
+  `SpyQueryHandler` already satisfy the new protocols structurally,
+  confirmed directly rather than assumed.
+- 12 new tests. Full suite: 422 passing (up from 410).
+
+---
+
 ## v3.6.0 — 2026-10-09
 
 ### Added
@@ -516,7 +549,8 @@ Dev dependencies: `pytest>=8.0`, `pytest-asyncio>=0.23`, `httpx>=0.27`.
 
 ---
 
-[Unreleased]: https://github.com/openframe-org/openframe-core/compare/v3.6.0...HEAD
+[Unreleased]: https://github.com/openframe-org/openframe-core/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/openframe-org/openframe-core/compare/v3.6.0...v3.7.0
 [3.6.0]: https://github.com/openframe-org/openframe-core/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/openframe-org/openframe-core/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/openframe-org/openframe-core/compare/v3.3.0...v3.4.0
