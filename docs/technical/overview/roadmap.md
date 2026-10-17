@@ -41,11 +41,106 @@ Lower-priority items:
 
 ### openframe-adapters
 
-- `openframe-adapters-db-postgres` — first adapter, reference implementation
-- `openframe-adapters-db-redis` — key-value, pub/sub, semantic cache
-- `openframe-adapters-db-mongo` — document store for AI Research Vault Phase 1
-- `openframe-adapters-queue-kafka` — producer + consumer, unlocks event-driven template
-- Remaining 11 adapters in parallel once the pattern is validated
+Done since this was last updated:
+
+- ~~`openframe-adapters-db-postgres` — first adapter, reference implementation~~
+- ~~`openframe-adapters-db-redis` — key-value, pub/sub, semantic cache~~
+- ~~`openframe-adapters-db-mongo` — document store for AI Research Vault Phase 1~~
+- ~~`openframe-adapters-queue-kafka` — producer + consumer, unlocks event-driven template~~
+- ~~Remaining 11 adapters in parallel once the pattern is validated~~ —
+  built in checklist-driven waves (see `openframe-adapters`' own
+  `.github/CHANGELOG.md`): queue (nats, rabbitmq), relational
+  (cockroachdb, mysql, mariadb, oracle), key-value/columnar (dynamodb,
+  cassandra), time-series (influxdb), vector (qdrant, milvus, chromadb),
+  graph (falkordb). 17 real packages total. FAISS remains explicitly
+  descoped — no native id→metadata store, doesn't fit
+  `BaseVectorStore`'s id-addressable design.
+- ~~`BaseVectorStore[T]` / `BaseGraphStore[T]`~~ — both shipped in this
+  repo (v3.5.0 / v3.6.0), each extending `BaseRepository[T]` directly
+  plus exactly one new method, rather than as disjoint sibling ports.
+  See [ADR-006](../architecture/adrs/adr-006-unified-port-lifecycle.md)
+  for the port-design philosophy both followed.
+
+Next capabilities under consideration — each is a candidate NEW
+top-level capability, not an extension of an existing adapter package.
+**Every adapter in this ecosystem depends only on `openframe-core` plus
+its own driver library, never on a sibling `openframe-adapters-*`
+package** (e.g. `openframe-adapters-db-falkordb` depends on `redis-py`
+directly, not on `openframe-adapters-db-redis`, even though FalkorDB is
+Redis-based under the hood) — this constraint applies to every item
+below too, most pointedly the Redis-backed ones:
+
+- **Object storage** (`BaseObjectStore` — already named in the v3.1.0
+  entry further down this same file) — S3, GCS, Azure Blob, MinIO. Strongest fit for the existing
+  extend-`BaseRepository`-plus-one-method pattern; put/get/delete/list
+  by key is arguably more naturally CRUD-shaped than graph nodes were.
+  **Superseded twice, history kept for continuity.** Pass 1 of this
+  entry proposed an outbound FTP/SFTP client adapter here under
+  `Capability.STORAGE` (server half → `openframe-protocol`, client half
+  → here). Pass 2 (`openframe-protocol` draft 7) moved both halves of
+  FTP into `openframe-protocol-ftp` together, removing it as a
+  candidate here entirely. **Pass 3 (`openframe-protocol` draft 8,
+  current)** reverses pass 2: the boundary is now "by peer, not by
+  protocol" — FTP's *server* half (accepting uploads from unknown
+  callers) stays in `openframe-protocol-ftp`, but the *client* half
+  (connecting to one specific named third-party FTP server) is a
+  third-party-peer integration and belongs back here, in
+  `openframe-adapters`, as originally thought. Its exact `Capability`
+  fit is explicitly **not yet decided** (draft 8's own open decision
+  D11 — `STORAGE` is a candidate, not settled) — don't treat the old
+  pass-1 `STORAGE` placement as confirmed; it's a plausible answer to
+  an open question, not a closed one. Same reopened status applies to
+  RTMP push and RTSP pull (D11 again — none of the eleven existing
+  `Capability` members fits either yet) and to a raw SMTP relay
+  (tentatively `NOTIFICATION`, same not-yet-added caveat as below).
+- **Full-text/structured search** — Elasticsearch, OpenSearch. Reuses
+  `Capability.SEARCH` (already shared with vector/graph stores); own
+  query shape (term/boolean queries, not vector similarity or Cypher).
+- **Secrets management** (`BaseSecretsProvider` — also pre-named) —
+  Vault, AWS/GCP/Azure secret managers. Not CRUD-shaped — versioned key
+  lookups need their own port design, not a `BaseRepository` extension.
+- **Feature flags** (`BaseFeatureFlagProvider` — also pre-named) —
+  LaunchDarkly, Unleash, GrowthBook. Not CRUD-shaped — boolean/variant
+  evaluation.
+- **Distributed locking** — own Redis/etcd/Zookeeper client (never the
+  `openframe-adapters-db-redis` package itself). `acquire`/`release`/
+  `extend` is close to CRUD-shaped but isn't quite it.
+- **Notifications** (email/SMS/push, plus Slack/webhook alerts and
+  PagerDuty/Opsgenie-style paging) — SES, SendGrid, Twilio, FCM, Slack
+  incoming webhooks, PagerDuty. Shaped like `BaseProducer`
+  (fire-and-forget/ack), not `BaseRepository`. Intended new taxonomy
+  member: `Capability.NOTIFICATION` — named now, not added to the enum
+  yet (see below). The role this covers is distinct from this repo's
+  existing logging/OTel-metrics signals: those are machine-consumed
+  telemetry (dashboards, alerting pipelines that process metrics);
+  `NOTIFICATION` covers reaching an actual human or external system
+  directly (an email landing in an inbox, a page firing, a Slack
+  message posting) — a different capability, not a backend for the
+  telemetry this repo already has. Candidate justification, following
+  the same bar `Capability.SEARCH` met (shared by multiple genuinely
+  analogous backends, not invented for one): email, SMS, push, and
+  chat/paging providers are all the same operational role — deliver a
+  message to an end-human/device via an external provider — which is
+  why this is a stronger fit than forcing it onto the existing `QUEUE`
+  member (which specifically describes message *brokers* with
+  consumer-side subscribe/ack semantics; SES/SendGrid/Slack have none
+  of that).
+  - **Do not add `Capability.NOTIFICATION` to the enum speculatively.**
+    Per this repo's own closed-taxonomy discipline (ADR-006;
+    `Capability.TRANSPORT` was not repurposed for inbound transport
+    servers in the `openframe-protocol` design review for the same
+    reason) — add the member only once a real adapter (email, SMS,
+    push, or paging) is actually being built, not ahead of one. This
+    bullet records the intended name and justification so that moment
+    doesn't have to re-derive either from scratch.
+- **Identity/auth verification** — Auth0, Okta, Keycloak token
+  introspection or user lookup.
+- **Rate limiting** — same Redis-driver-directly caveat as locking.
+
+Deliberately out of scope for now: workflow orchestration (Temporal/
+Camunda — too large a port surface for one method), schema registries
+(Kafka-ecosystem-specific, niche), payment processing (too
+domain-specific for generic infra adapters).
 
 ### openframe-suite
 
@@ -65,7 +160,7 @@ Lower-priority items:
 - `ApplicationBootstrap.registry` — new read-only property exposing the underlying `PluginRegistry`.
 - `PluginRegistry(default_init_timeout=...)` / `register(..., init_timeout=...)` (mirrored on `ApplicationBootstrap`) — bound how long `initialize_all()` waits for a port's `initialize()`. Both default to `None` (no timeout) — fully backward-compatible.
 - Fixed: `TracingProxy`'s `asyncio.iscoroutinefunction` deprecation; `AmbiguousCapabilityError` now mirrors `capability`/`matches` into `context`.
-- Full changelog: [`.github/CHANGELOG.md`](../../../.github/CHANGELOG.md#v330--2026-09-28).
+- Full changelog: [`.github/CHANGELOG.md`](https://github.com/Furious-Meteors/openframe-core/blob/production/.github/CHANGELOG.md#v330--2026-09-28).
 
 ---
 

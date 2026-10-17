@@ -156,6 +156,7 @@ nav:
         - ADR-004 Pydantic Settings: technical/architecture/adrs/adr-004-pydantic.md
         - ADR-005 Middleware Telemetry: technical/architecture/adrs/adr-005-middleware.md
         - ADR-006 Unified Port Lifecycle: technical/architecture/adrs/adr-006-unified-port-lifecycle.md
+        - ADR-007 Schema Contracts: technical/architecture/adrs/adr-007-schema-contracts.md
       - Capability Taxonomy: technical/architecture/capability-taxonomy.md
       - Error Taxonomy: technical/architecture/error-taxonomy.md
       - Design Decisions: technical/architecture/design-decisions.md

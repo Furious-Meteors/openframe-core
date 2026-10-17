@@ -11,7 +11,7 @@ As of v3.1.0, `ports/` unifies what were previously two separate
 modules: `openframe.core.contracts` (the port/lifecycle primitives) and
 `openframe.core.ports` (the outbound protocols, now internally organised
 under `ports/outbound/`). See
-[ADR-006's v3.1.0 addendum](adrs/adr-006-unified-port-lifecycle.md#addendum--contracts-merged-into-ports-outbound-sub-module-introduced-v310)
+[ADR-006's v3.1.0 addendum](adrs/adr-006-unified-port-lifecycle.md#addendum-contracts-merged-into-ports-outbound-sub-module-introduced-v310)
 for the full rationale.
 
 ---
