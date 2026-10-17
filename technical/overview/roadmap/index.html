@@ -717,6 +717,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#v330-applicationbootstrapcomposeget_allregistry-port-init-timeouts-non-breaking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.3.0 — ApplicationBootstrap.compose()/get_all()/registry, port init timeouts (non-breaking)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1158,6 +1169,8 @@
       
         
       
+        
+      
     
     
     
@@ -1369,6 +1382,34 @@
     
   
     ADR-006 Unified Port Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/adrs/adr-007-schema-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Schema Contracts
   
 
     
@@ -2988,6 +3029,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#v330-applicationbootstrapcomposeget_allregistry-port-init-timeouts-non-breaking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.3.0 — ApplicationBootstrap.compose()/get_all()/registry, port init timeouts (non-breaking)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3176,13 +3228,106 @@
   documentation fix.</li>
 </ul>
 <h3 id="openframe-adapters">openframe-adapters<a class="headerlink" href="#openframe-adapters" title="Permanent link">&para;</a></h3>
+<p>Done since this was last updated:</p>
 <ul>
-<li><code>openframe-adapters-db-postgres</code> — first adapter, reference implementation</li>
-<li><code>openframe-adapters-db-redis</code> — key-value, pub/sub, semantic cache</li>
-<li><code>openframe-adapters-db-mongo</code> — document store for AI Research Vault Phase 1</li>
-<li><code>openframe-adapters-queue-kafka</code> — producer + consumer, unlocks event-driven template</li>
-<li>Remaining 11 adapters in parallel once the pattern is validated</li>
+<li><del><code>openframe-adapters-db-postgres</code> — first adapter, reference implementation</del></li>
+<li><del><code>openframe-adapters-db-redis</code> — key-value, pub/sub, semantic cache</del></li>
+<li><del><code>openframe-adapters-db-mongo</code> — document store for AI Research Vault Phase 1</del></li>
+<li><del><code>openframe-adapters-queue-kafka</code> — producer + consumer, unlocks event-driven template</del></li>
+<li><del>Remaining 11 adapters in parallel once the pattern is validated</del> —
+  built in checklist-driven waves (see <code>openframe-adapters</code>' own
+  <code>.github/CHANGELOG.md</code>): queue (nats, rabbitmq), relational
+  (cockroachdb, mysql, mariadb, oracle), key-value/columnar (dynamodb,
+  cassandra), time-series (influxdb), vector (qdrant, milvus, chromadb),
+  graph (falkordb). 17 real packages total. FAISS remains explicitly
+  descoped — no native id→metadata store, doesn't fit
+  <code>BaseVectorStore</code>'s id-addressable design.</li>
+<li><del><code>BaseVectorStore[T]</code> / <code>BaseGraphStore[T]</code></del> — both shipped in this
+  repo (v3.5.0 / v3.6.0), each extending <code>BaseRepository[T]</code> directly
+  plus exactly one new method, rather than as disjoint sibling ports.
+  See <a href="../../architecture/adrs/adr-006-unified-port-lifecycle/">ADR-006</a>
+  for the port-design philosophy both followed.</li>
 </ul>
+<p>Next capabilities under consideration — each is a candidate NEW
+top-level capability, not an extension of an existing adapter package.
+<strong>Every adapter in this ecosystem depends only on <code>openframe-core</code> plus
+its own driver library, never on a sibling <code>openframe-adapters-*</code>
+package</strong> (e.g. <code>openframe-adapters-db-falkordb</code> depends on <code>redis-py</code>
+directly, not on <code>openframe-adapters-db-redis</code>, even though FalkorDB is
+Redis-based under the hood) — this constraint applies to every item
+below too, most pointedly the Redis-backed ones:</p>
+<ul>
+<li><strong>Object storage</strong> (<code>BaseObjectStore</code> — already named in the v3.1.0
+  entry further down this same file) — S3, GCS, Azure Blob, MinIO. Strongest fit for the existing
+  extend-<code>BaseRepository</code>-plus-one-method pattern; put/get/delete/list
+  by key is arguably more naturally CRUD-shaped than graph nodes were.
+  <strong>Superseded twice, history kept for continuity.</strong> Pass 1 of this
+  entry proposed an outbound FTP/SFTP client adapter here under
+  <code>Capability.STORAGE</code> (server half → <code>openframe-protocol</code>, client half
+  → here). Pass 2 (<code>openframe-protocol</code> draft 7) moved both halves of
+  FTP into <code>openframe-protocol-ftp</code> together, removing it as a
+  candidate here entirely. <strong>Pass 3 (<code>openframe-protocol</code> draft 8,
+  current)</strong> reverses pass 2: the boundary is now "by peer, not by
+  protocol" — FTP's <em>server</em> half (accepting uploads from unknown
+  callers) stays in <code>openframe-protocol-ftp</code>, but the <em>client</em> half
+  (connecting to one specific named third-party FTP server) is a
+  third-party-peer integration and belongs back here, in
+  <code>openframe-adapters</code>, as originally thought. Its exact <code>Capability</code>
+  fit is explicitly <strong>not yet decided</strong> (draft 8's own open decision
+  D11 — <code>STORAGE</code> is a candidate, not settled) — don't treat the old
+  pass-1 <code>STORAGE</code> placement as confirmed; it's a plausible answer to
+  an open question, not a closed one. Same reopened status applies to
+  RTMP push and RTSP pull (D11 again — none of the eleven existing
+  <code>Capability</code> members fits either yet) and to a raw SMTP relay
+  (tentatively <code>NOTIFICATION</code>, same not-yet-added caveat as below).</li>
+<li><strong>Full-text/structured search</strong> — Elasticsearch, OpenSearch. Reuses
+  <code>Capability.SEARCH</code> (already shared with vector/graph stores); own
+  query shape (term/boolean queries, not vector similarity or Cypher).</li>
+<li><strong>Secrets management</strong> (<code>BaseSecretsProvider</code> — also pre-named) —
+  Vault, AWS/GCP/Azure secret managers. Not CRUD-shaped — versioned key
+  lookups need their own port design, not a <code>BaseRepository</code> extension.</li>
+<li><strong>Feature flags</strong> (<code>BaseFeatureFlagProvider</code> — also pre-named) —
+  LaunchDarkly, Unleash, GrowthBook. Not CRUD-shaped — boolean/variant
+  evaluation.</li>
+<li><strong>Distributed locking</strong> — own Redis/etcd/Zookeeper client (never the
+  <code>openframe-adapters-db-redis</code> package itself). <code>acquire</code>/<code>release</code>/
+  <code>extend</code> is close to CRUD-shaped but isn't quite it.</li>
+<li><strong>Notifications</strong> (email/SMS/push, plus Slack/webhook alerts and
+  PagerDuty/Opsgenie-style paging) — SES, SendGrid, Twilio, FCM, Slack
+  incoming webhooks, PagerDuty. Shaped like <code>BaseProducer</code>
+  (fire-and-forget/ack), not <code>BaseRepository</code>. Intended new taxonomy
+  member: <code>Capability.NOTIFICATION</code> — named now, not added to the enum
+  yet (see below). The role this covers is distinct from this repo's
+  existing logging/OTel-metrics signals: those are machine-consumed
+  telemetry (dashboards, alerting pipelines that process metrics);
+  <code>NOTIFICATION</code> covers reaching an actual human or external system
+  directly (an email landing in an inbox, a page firing, a Slack
+  message posting) — a different capability, not a backend for the
+  telemetry this repo already has. Candidate justification, following
+  the same bar <code>Capability.SEARCH</code> met (shared by multiple genuinely
+  analogous backends, not invented for one): email, SMS, push, and
+  chat/paging providers are all the same operational role — deliver a
+  message to an end-human/device via an external provider — which is
+  why this is a stronger fit than forcing it onto the existing <code>QUEUE</code>
+  member (which specifically describes message <em>brokers</em> with
+  consumer-side subscribe/ack semantics; SES/SendGrid/Slack have none
+  of that).</li>
+<li><strong>Do not add <code>Capability.NOTIFICATION</code> to the enum speculatively.</strong>
+    Per this repo's own closed-taxonomy discipline (ADR-006;
+    <code>Capability.TRANSPORT</code> was not repurposed for inbound transport
+    servers in the <code>openframe-protocol</code> design review for the same
+    reason) — add the member only once a real adapter (email, SMS,
+    push, or paging) is actually being built, not ahead of one. This
+    bullet records the intended name and justification so that moment
+    doesn't have to re-derive either from scratch.</li>
+<li><strong>Identity/auth verification</strong> — Auth0, Okta, Keycloak token
+  introspection or user lookup.</li>
+<li><strong>Rate limiting</strong> — same Redis-driver-directly caveat as locking.</li>
+</ul>
+<p>Deliberately out of scope for now: workflow orchestration (Temporal/
+Camunda — too large a port surface for one method), schema registries
+(Kafka-ecosystem-specific, niche), payment processing (too
+domain-specific for generic infra adapters).</p>
 <h3 id="openframe-suite">openframe-suite<a class="headerlink" href="#openframe-suite" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>openframe-suite[rest]</code>, <code>[inference]</code>, <code>[worker]</code> topology bundles</li>
@@ -3190,6 +3335,19 @@
 </ul>
 <hr />
 <h2 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h2>
+<h2 id="v330-applicationbootstrapcomposeget_allregistry-port-init-timeouts-non-breaking">v3.3.0 — ApplicationBootstrap.compose()/get_all()/registry, port init timeouts (non-breaking)<a class="headerlink" href="#v330-applicationbootstrapcomposeget_allregistry-port-init-timeouts-non-breaking" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>Resolves the "three application wiring options" ambiguity tracked above by consolidating to one recommended class (<code>ApplicationBootstrap</code>) at three levels of ceremony. See <a href="../../architecture/design-decisions/">Design Decisions</a> and <a href="../../../developer-guide/how-it-works/#choosing-a-wiring-pattern">How It Works § Choosing a Wiring Pattern</a>.</p>
+</blockquote>
+<ul>
+<li><code>ApplicationBootstrap.compose(*ports)</code> — new classmethod; zero-subclass entry point for a service with one or a few ports.</li>
+<li><code>ApplicationBootstrap.get_all(capability)</code> — new method, mirrors <code>PluginRegistry.get_all()</code>.</li>
+<li><code>ApplicationBootstrap.registry</code> — new read-only property exposing the underlying <code>PluginRegistry</code>.</li>
+<li><code>PluginRegistry(default_init_timeout=...)</code> / <code>register(..., init_timeout=...)</code> (mirrored on <code>ApplicationBootstrap</code>) — bound how long <code>initialize_all()</code> waits for a port's <code>initialize()</code>. Both default to <code>None</code> (no timeout) — fully backward-compatible.</li>
+<li>Fixed: <code>TracingProxy</code>'s <code>asyncio.iscoroutinefunction</code> deprecation; <code>AmbiguousCapabilityError</code> now mirrors <code>capability</code>/<code>matches</code> into <code>context</code>.</li>
+<li>Full changelog: <a href="https://github.com/Furious-Meteors/openframe-core/blob/production/.github/CHANGELOG.md#v330--2026-09-28"><code>.github/CHANGELOG.md</code></a>.</li>
+</ul>
+<hr />
 <h2 id="v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking">v3.1.0 — contracts/ Merged into ports/, outbound/ Sub-module Introduced (breaking)<a class="headerlink" href="#v310-contracts-merged-into-ports-outbound-sub-module-introduced-breaking" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Ecosystem packages pinned <code>openframe-core&gt;=3.0,&lt;4</code>; <code>openframe-adapters</code> has migrated its imports to <code>openframe.core.ports</code>.</p>

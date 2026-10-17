@@ -1097,6 +1097,8 @@
       
         
       
+        
+      
     
     
     
@@ -1308,6 +1310,34 @@
     
   
     ADR-006 Unified Port Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adrs/adr-007-schema-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Schema Contracts
   
 
     
@@ -3088,10 +3118,10 @@ flowchart TD
     ReturnSync["return probe directly\nno span, no cache"]
     BuildClosure["build _traced closure\ncache[name] = _traced"]
     ReturnClosure["return _traced"]
-    CallTime["_traced(<em>args, </em><em>kwargs) called"]
+    CallTime["_traced(*args, **kwargs) called"]
     Resolve["current = getattr(wrapped, name)\nresolved fresh every call"]
     Span["start_as_current_span(prefix.name)"]
-    Invoke["await current(</em>args, **kwargs)"]</p>
+    Invoke["await current(*args, **kwargs)"]</p>
 <div class="language-text highlight"><pre><span></span><code>Access --&gt; Cache
 Cache --&gt;|yes| ReturnCached
 Cache --&gt;|no| Probe
