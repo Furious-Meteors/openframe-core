@@ -11,6 +11,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v3.8.0 — 2026-10-17
+
+### Added — `SessionHandler`/`Session`/`CloseReason` (ADR-008)
+
+A new driving-side contract for long-lived connections (WebSocket, SSE),
+sibling to `UseCase`/`CommandHandler`/`QueryHandler` (ADR-006). Built to
+unblock `openframe-protocol`'s session-transport work, which found the
+design spec's own `SessionHandler` sketch had zero code anywhere and left
+one concrete question unresolved: how a handler sends events *out*.
+
+- `openframe.core.inbound.Session[TOut]` — `@runtime_checkable Protocol`,
+  `context: RequestContext` (built once per session, not once per event)
+  plus `send(event)`/`close(reason)`. Push-based, not a pull-based
+  `AsyncIterator` return value — see ADR-008 for the full reasoning.
+- `openframe.core.inbound.SessionHandler[TIn, TOut]` —
+  `on_open(session)`/`on_event(session, event)`/`on_close(session, reason)`.
+  `on_open` doubles as accept/reject: raising rejects, flowing through the
+  same `categorize`/`build_envelope` path (`openframe-protocol-base`)
+  every other inbound contract's failures already use.
+- `openframe.core.inbound.CloseReason` — closed `Enum`:
+  `COMPLETED`/`CLIENT_DISCONNECT`/`SERVER_SHUTDOWN`/`ERROR`.
+- `openframe.core.testing.SessionHandlerContractTests` and
+  `openframe.core.testing.InMemorySession` — same fixture-based subclass
+  pattern as the three existing inbound contract-test classes/fakes.
+- Deliberately built directly in `openframe-core`, not incubated in
+  `openframe-protocol-base` first per the design spec's own stated
+  rule-of-three gate — documented as an explicit, conscious exception in
+  ADR-008, not a precedent for skipping that discipline generally.
+- Purely additive — no existing contract changed. 445 tests passing (see
+  `tests/test_inbound.py`/`test_inbound_contracts.py` for the new
+  `SessionHandler`/`Session`/`InMemorySession` coverage).
+
+---
+
 ## v3.7.0 — 2026-10-11
 
 ### Added

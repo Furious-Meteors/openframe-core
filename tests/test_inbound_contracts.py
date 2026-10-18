@@ -12,6 +12,12 @@ Structure
   :class:`~openframe.core.testing.CommandHandlerContractTests` suite.
 - ``TestSpyQueryHandlerContracts``      — passes the full
   :class:`~openframe.core.testing.QueryHandlerContractTests` suite.
+- ``TestEchoSessionHandlerContracts``   — passes the full
+  :class:`~openframe.core.testing.SessionHandlerContractTests` suite,
+  using a local ``EchoSessionHandler`` (echoes each inbound event back
+  through ``session.send()``) since there is no ready-made fake
+  ``SessionHandler`` in ``openframe.core.testing.fakes`` — unlike
+  ``Session`` itself, which does have one (``InMemorySession``).
 - Standalone functions for fake-specific spy/recording behaviour not
   covered by the contract tests.
 """
@@ -19,11 +25,13 @@ from __future__ import annotations
 
 import pytest
 
-from openframe.core.inbound import RequestContext
+from openframe.core.inbound import CloseReason, RequestContext, Session
 from openframe.core.testing import (
     CommandHandlerContractTests,
     EchoUseCase,
+    InMemorySession,
     QueryHandlerContractTests,
+    SessionHandlerContractTests,
     SpyCommandHandler,
     SpyQueryHandler,
     UseCaseContractTests,
@@ -70,6 +78,38 @@ class TestSpyQueryHandlerContracts(QueryHandlerContractTests):
     def query_handler(self) -> SpyQueryHandler:
         """Provide a fresh SpyQueryHandler for each test."""
         return SpyQueryHandler(response={"id": "test-query"})
+
+
+# ---------------------------------------------------------------------------
+# EchoSessionHandler — contract conformance
+# ---------------------------------------------------------------------------
+
+
+class EchoSessionHandler:
+    """
+    Minimal SessionHandler satisfying the contract — echoes every inbound
+    event back through session.send(). Local to this test file since there
+    is no ready-made fake SessionHandler in openframe.core.testing.fakes
+    (unlike Session, which has InMemorySession).
+    """
+
+    async def on_open(self, session: Session) -> None:
+        pass
+
+    async def on_event(self, session: Session, event) -> None:
+        await session.send(event)
+
+    async def on_close(self, session: Session, reason: CloseReason) -> None:
+        pass
+
+
+class TestEchoSessionHandlerContracts(SessionHandlerContractTests):
+    """EchoSessionHandler must pass the full SessionHandlerContractTests suite."""
+
+    @pytest.fixture
+    def session_handler(self) -> EchoSessionHandler:
+        """Provide a fresh EchoSessionHandler for each test."""
+        return EchoSessionHandler()
 
 
 # ---------------------------------------------------------------------------
@@ -162,3 +202,48 @@ async def test_spy_query_handler_returns_configured_response() -> None:
     handler = SpyQueryHandler(response={"id": "item-1", "name": "widget"})
     result = await handler.execute("item-1")
     assert result == {"id": "item-1", "name": "widget"}
+
+
+# ---------------------------------------------------------------------------
+# InMemorySession — spy/recording behaviour
+# ---------------------------------------------------------------------------
+
+
+async def test_in_memory_session_records_sent_events() -> None:
+    session = InMemorySession(context=RequestContext(correlation_id="corr-sess-1"))
+    await session.send("event-1")
+    await session.send("event-2")
+    assert session.sent == ["event-1", "event-2"]
+
+
+async def test_in_memory_session_send_after_close_raises() -> None:
+    session = InMemorySession(context=RequestContext(correlation_id="corr-sess-2"))
+    await session.close()
+    with pytest.raises(RuntimeError):
+        await session.send("too-late")
+
+
+async def test_in_memory_session_close_records_reason() -> None:
+    session = InMemorySession(context=RequestContext(correlation_id="corr-sess-3"))
+    await session.close(CloseReason.CLIENT_DISCONNECT)
+    assert session.closed
+    assert session.close_reason is CloseReason.CLIENT_DISCONNECT
+
+
+async def test_in_memory_session_close_defaults_to_completed() -> None:
+    session = InMemorySession(context=RequestContext(correlation_id="corr-sess-4"))
+    await session.close()
+    assert session.close_reason is CloseReason.COMPLETED
+
+
+async def test_in_memory_session_close_is_idempotent() -> None:
+    session = InMemorySession(context=RequestContext(correlation_id="corr-sess-5"))
+    await session.close(CloseReason.COMPLETED)
+    await session.close(CloseReason.ERROR)
+    assert session.close_reason is CloseReason.COMPLETED
+
+
+def test_in_memory_session_context_is_stable() -> None:
+    ctx = RequestContext(correlation_id="corr-sess-6")
+    session = InMemorySession(context=ctx)
+    assert session.context is ctx

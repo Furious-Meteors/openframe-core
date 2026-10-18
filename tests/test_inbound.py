@@ -2,7 +2,7 @@
 tests/test_inbound.py
 =======================
 Tests for openframe.core.inbound — UseCase, CommandHandler, QueryHandler,
-RequestContext.
+SessionHandler, Session, CloseReason, RequestContext.
 """
 from __future__ import annotations
 
@@ -11,7 +11,15 @@ import dataclasses
 import pytest
 
 from openframe.core.ports import PrincipalContext, TenantContext
-from openframe.core.inbound import CommandHandler, QueryHandler, RequestContext, UseCase
+from openframe.core.inbound import (
+    CloseReason,
+    CommandHandler,
+    QueryHandler,
+    RequestContext,
+    Session,
+    SessionHandler,
+    UseCase,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -45,6 +53,51 @@ class GetItemQueryHandler:
 
 class MissingExecute:
     """Has no execute method — must not satisfy any inbound protocol."""
+
+
+class RecordingSession:
+    """Full implementation of Session[str] — records sent events and close reason."""
+
+    def __init__(self, *, context: RequestContext) -> None:
+        self.context = context
+        self.sent: list[str] = []
+        self.closed = False
+        self.close_reason: CloseReason | None = None
+
+    async def send(self, event: str) -> None:
+        if self.closed:
+            raise RuntimeError("cannot send on a closed session")
+        self.sent.append(event)
+
+    async def close(self, reason: CloseReason = CloseReason.COMPLETED) -> None:
+        if self.closed:
+            return
+        self.closed = True
+        self.close_reason = reason
+
+
+class EchoSessionHandler:
+    """Full implementation of SessionHandler[str, str] — echoes events back."""
+
+    def __init__(self, *, reject_with: BaseException | None = None) -> None:
+        self._reject_with = reject_with
+        self.opened: list[Session] = []
+        self.closed: list[tuple[Session, CloseReason]] = []
+
+    async def on_open(self, session: Session) -> None:
+        if self._reject_with is not None:
+            raise self._reject_with
+        self.opened.append(session)
+
+    async def on_event(self, session: Session, event: str) -> None:
+        await session.send(event)
+
+    async def on_close(self, session: Session, reason: CloseReason) -> None:
+        self.closed.append((session, reason))
+
+
+class MissingSessionMethods:
+    """Has no on_open/on_event/on_close — must not satisfy SessionHandler."""
 
 
 # ---------------------------------------------------------------------------
@@ -131,6 +184,91 @@ async def test_query_handler_execute_returns_result() -> None:
     handler = GetItemQueryHandler()
     result = await handler.execute("item-1")
     assert result == {"id": "item-1"}
+
+
+# ---------------------------------------------------------------------------
+# SessionHandler / Session / CloseReason
+# ---------------------------------------------------------------------------
+
+
+def test_session_handler_is_runtime_checkable() -> None:
+    assert (
+        getattr(SessionHandler, "_is_runtime_protocol", False)
+        or hasattr(SessionHandler, "__protocol_attrs__")
+    )
+
+
+def test_echo_session_handler_satisfies_protocol() -> None:
+    assert isinstance(EchoSessionHandler(), SessionHandler)
+
+
+def test_missing_session_methods_fails_session_handler_protocol() -> None:
+    assert not isinstance(MissingSessionMethods(), SessionHandler)
+
+
+def test_recording_session_satisfies_session_protocol() -> None:
+    session = RecordingSession(context=RequestContext(correlation_id="corr-6"))
+    assert isinstance(session, Session)
+
+
+async def test_on_open_accepts_and_records_session() -> None:
+    handler = EchoSessionHandler()
+    session = RecordingSession(context=RequestContext(correlation_id="corr-7"))
+    await handler.on_open(session)
+    assert handler.opened == [session]
+    assert not session.closed
+
+
+async def test_on_open_reject_raises() -> None:
+    handler = EchoSessionHandler(reject_with=PermissionError("nope"))
+    session = RecordingSession(context=RequestContext(correlation_id="corr-8"))
+    with pytest.raises(PermissionError):
+        await handler.on_open(session)
+    assert handler.opened == []
+
+
+async def test_on_event_sends_through_session() -> None:
+    handler = EchoSessionHandler()
+    session = RecordingSession(context=RequestContext(correlation_id="corr-9"))
+    await handler.on_open(session)
+    await handler.on_event(session, "hello")
+    await handler.on_event(session, "world")
+    assert session.sent == ["hello", "world"]
+
+
+async def test_on_close_records_reason() -> None:
+    handler = EchoSessionHandler()
+    session = RecordingSession(context=RequestContext(correlation_id="corr-10"))
+    await handler.on_open(session)
+    await handler.on_close(session, CloseReason.CLIENT_DISCONNECT)
+    assert handler.closed == [(session, CloseReason.CLIENT_DISCONNECT)]
+
+
+async def test_session_send_after_close_raises() -> None:
+    session = RecordingSession(context=RequestContext(correlation_id="corr-11"))
+    await session.close()
+    with pytest.raises(RuntimeError):
+        await session.send("too-late")
+
+
+async def test_session_close_is_idempotent() -> None:
+    session = RecordingSession(context=RequestContext(correlation_id="corr-12"))
+    await session.close(CloseReason.COMPLETED)
+    await session.close(CloseReason.ERROR)
+    assert session.close_reason is CloseReason.COMPLETED
+
+
+def test_close_reason_values() -> None:
+    assert CloseReason.COMPLETED.value == "completed"
+    assert CloseReason.CLIENT_DISCONNECT.value == "client_disconnect"
+    assert CloseReason.SERVER_SHUTDOWN.value == "server_shutdown"
+    assert CloseReason.ERROR.value == "error"
+
+
+def test_session_context_is_stable_across_lifetime() -> None:
+    ctx = RequestContext(correlation_id="corr-13")
+    session = RecordingSession(context=ctx)
+    assert session.context is ctx
 
 
 # ---------------------------------------------------------------------------

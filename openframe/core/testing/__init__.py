@@ -29,6 +29,11 @@ Quick reference::
 
     use_case = EchoUseCase(response={"id": "1"})
     assert isinstance(use_case, UseCase)
+
+    from openframe.core.testing import InMemorySession, SessionHandlerContractTests
+
+    session = InMemorySession(context=RequestContext(correlation_id="t1"))
+    await my_session_handler.on_open(session)
 """
 from __future__ import annotations
 
@@ -37,6 +42,7 @@ from openframe.core.testing.contracts.graph_store import GraphStoreContractTests
 from openframe.core.testing.contracts.inbound import (
     CommandHandlerContractTests,
     QueryHandlerContractTests,
+    SessionHandlerContractTests,
     UseCaseContractTests,
 )
 from openframe.core.testing.contracts.lifecycle import LifecycleContractTests
@@ -52,6 +58,7 @@ from openframe.core.testing.fakes.consumer import FakeConsumer
 from openframe.core.testing.fakes.graph_store import InMemoryGraphStore
 from openframe.core.testing.fakes.inbound import (
     EchoUseCase,
+    InMemorySession,
     SpyCommandHandler,
     SpyQueryHandler,
 )
@@ -68,6 +75,7 @@ __all__ = [
     "EchoUseCase",
     "SpyCommandHandler",
     "SpyQueryHandler",
+    "InMemorySession",
     "LifecycleContractTests",
     "PortContractTests",
     "RepositoryContractTests",
@@ -78,6 +86,7 @@ __all__ = [
     "UseCaseContractTests",
     "CommandHandlerContractTests",
     "QueryHandlerContractTests",
+    "SessionHandlerContractTests",
     "RemoteCommandClientContractTests",
     "RemoteQueryClientContractTests",
 ]

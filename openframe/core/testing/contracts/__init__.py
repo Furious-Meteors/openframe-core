@@ -15,10 +15,11 @@ adding traverse-specific assertions — mirroring how ``BaseGraphStore``
 extends ``BaseRepository``.
 
 Inbound: ``UseCaseContractTests``, ``CommandHandlerContractTests``,
-``QueryHandlerContractTests`` mirror the outbound contract classes for
-the driving side of the hexagon. They do not build on any shared base
-class — ``UseCase``/``CommandHandler``/``QueryHandler`` do not extend
-``BasePort``.
+``QueryHandlerContractTests``, ``SessionHandlerContractTests`` mirror the
+outbound contract classes for the driving side of the hexagon. They do
+not build on any shared base class —
+``UseCase``/``CommandHandler``/``QueryHandler``/``SessionHandler`` do not
+extend ``BasePort``.
 
 No top-level pytest import — all modules here can be imported without
 pytest installed.
@@ -32,6 +33,7 @@ from openframe.core.testing.contracts.graph_store import GraphStoreContractTests
 from openframe.core.testing.contracts.inbound import (
     CommandHandlerContractTests,
     QueryHandlerContractTests,
+    SessionHandlerContractTests,
     UseCaseContractTests,
 )
 from openframe.core.testing.contracts.lifecycle import LifecycleContractTests
@@ -55,6 +57,7 @@ __all__ = [
     "UseCaseContractTests",
     "CommandHandlerContractTests",
     "QueryHandlerContractTests",
+    "SessionHandlerContractTests",
     "RemoteCommandClientContractTests",
     "RemoteQueryClientContractTests",
 ]
