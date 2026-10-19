@@ -5,7 +5,7 @@ Tests for the port/lifecycle primitives in openframe.core.ports
 (ADR-006) — previously openframe.core.contracts, merged into
 openframe.core.ports in v3.1.0: Identity, Lifecycle, BasePort,
 Capability, PluginStatus/PluginHealth/PluginContext, PrincipalContext,
-TenantContext.
+TenantContext. Also covers Transportation (ADR-009), added in v3.9.0.
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from openframe.core.ports import (
     PluginStatus,
     PrincipalContext,
     TenantContext,
+    Transportation,
 )
 
 
@@ -99,6 +100,50 @@ def test_capability_has_expected_members() -> None:
 
 def test_capability_str_returns_value() -> None:
     assert str(Capability.QUEUE) == "queue"
+
+
+# ---------------------------------------------------------------------------
+# Transportation
+# ---------------------------------------------------------------------------
+
+
+def test_transportation_has_exactly_ten_members() -> None:
+    expected = {
+        "HTTP",
+        "GRPC",
+        "SSE",
+        "WEBSOCKET",
+        "WEBHOOK",
+        "QUIC",
+        "RTMP",
+        "RTSP",
+        "HLS",
+        "DASH",
+    }
+    assert {m.name for m in Transportation} == expected
+    assert len(Transportation) == 10
+
+
+def test_transportation_values() -> None:
+    assert Transportation.HTTP == "http"
+    assert Transportation.GRPC == "grpc"
+    assert Transportation.SSE == "sse"
+    assert Transportation.WEBSOCKET == "websocket"
+    assert Transportation.WEBHOOK == "webhook"
+    assert Transportation.QUIC == "quic"
+    assert Transportation.RTMP == "rtmp"
+    assert Transportation.RTSP == "rtsp"
+    assert Transportation.HLS == "hls"
+    assert Transportation.DASH == "dash"
+
+
+def test_transportation_is_str_enum() -> None:
+    assert isinstance(Transportation.HTTP, str)
+    assert Transportation.HTTP == "http"
+
+
+def test_transportation_str_returns_value() -> None:
+    assert str(Transportation.HTTP) == "http"
 
 
 # ---------------------------------------------------------------------------

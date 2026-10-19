@@ -22,7 +22,7 @@ old ``openframe.core.contracts`` path — update all imports to
     from openframe.core.ports import (
         BasePort, Capability, Identity, Lifecycle,
         PluginStatus, PluginHealth, PluginContext,
-        PrincipalContext, TenantContext,
+        PrincipalContext, TenantContext, Transportation,
     )
 
 **Outbound port protocols** — capability-specific protocols built on
@@ -51,6 +51,7 @@ from openframe.core.ports.outbound import (
     BaseVectorStore,
 )
 from openframe.core.ports.port import BasePort
+from openframe.core.ports.transportation import Transportation
 
 __all__ = [
     # Port primitives
@@ -58,6 +59,7 @@ __all__ = [
     "Lifecycle",
     "BasePort",
     "Capability",
+    "Transportation",
     "PluginStatus",
     "PluginHealth",
     "PluginContext",
