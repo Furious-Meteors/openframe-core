@@ -13,6 +13,9 @@ Architecture Decision Records (ADRs) capture significant design choices, the alt
 | [ADR-005](adr-005-middleware.md) | Accepted — v1.0.0 | Pure ASGI Middleware for Telemetry |
 | [ADR-006](adr-006-unified-port-lifecycle.md) | Accepted — v3.0.0 | Unified Port + Lifecycle Contract (supersedes port/health/plugin portions of ADR-002) |
 | [ADR-007](adr-007-schema-contracts.md) | Accepted — v3.2.1 | `@contract` Marker for Cross-Service Schema Governance |
+| [ADR-008](adr-008-session-handler.md) | Accepted — v3.8.0 | `SessionHandler`: a driving-side contract for long-lived connections |
+| [ADR-009](adr-009-media-frame-and-transportation.md) | Accepted — v3.9.0 | `MediaFrame`/`MediaKind` and `Transportation` |
+| [ADR-010](adr-010-media-segment.md) | Accepted — v3.10.0 | `MediaSegment` |
 
 ---
 
@@ -21,4 +24,7 @@ Architecture Decision Records (ADRs) capture significant design choices, the alt
 - Start with [ADR-002](adr-002-hexagonal.md) for the overall hexagonal architecture rationale.
 - Read [ADR-006](adr-006-unified-port-lifecycle.md) to understand what changed in v3.0.0 and why — it supersedes the port, health, and plugin sections of ADR-002.
 - Read [ADR-007](adr-007-schema-contracts.md) for the `openframe.core.schemas` marker that `openframe-schemas` (in `openframe-tooling`) governs.
+- Read [ADR-008](adr-008-session-handler.md) for the `openframe.core.inbound.SessionHandler` contract added in v3.8.0.
+- Read [ADR-009](adr-009-media-frame-and-transportation.md) for `openframe.core.media` and `Transportation`, added in v3.9.0.
+- Read [ADR-010](adr-010-media-segment.md) for `MediaSegment`, added in v3.10.0.
 - [ADR-001](adr-001-namespace.md), [ADR-003](adr-003-async.md), [ADR-004](adr-004-pydantic.md), and [ADR-005](adr-005-middleware.md) are independent and can be read in any order.
