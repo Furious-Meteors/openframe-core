@@ -11,6 +11,126 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v3.10.0 — 2026-10-19
+
+### Added — `openframe.core.media.MediaSegment` (ADR-010)
+
+A second type added to `openframe.core.media`, joining `MediaKind`/`MediaFrame` ahead of
+`openframe-protocol-media`'s next capability: pulling/polling HLS and DASH streams by fetching whole
+segment files (fMP4/CMAF `.m4s` or MPEG-TS `.ts`), rather than the already-classified, already-demuxed
+elementary-stream units `MediaFrame` represents. Same cross-family sharing rationale as ADR-009 — this is
+the pattern repeating for a second, related type, not a new architectural decision.
+
+- **`openframe.core.media.MediaSegment`** — frozen dataclass: `payload: bytes`, `sequence: int`,
+  `duration_ms: int`, `discontinuity: bool = False`, `program_date_time_ms: int | None = None`,
+  `representation_id: str | None = None`, `received_at_ns: int = 0`.
+  - `payload` holds a whole muxed container (audio AND video together), unlike `MediaFrame.payload`'s
+    single classified elementary-stream unit — demuxing one into `MediaFrame`s is deliberately left to a
+    future ffmpeg-backed adapter, not `openframe-protocol-media`.
+  - `sequence` must be used for de-duplication, **never the segment's URI** — a real spike confirmed
+    segment URIs can repeat across an unrelated stream/encoder restart (filename counters reset), so
+    dedup-by-URI would silently conflate two genuinely different segments. HLS `media_sequence` and DASH's
+    resolved `SegmentTemplate`/`SegmentTimeline` number were both confirmed reliable by real spikes (the
+    DASH case hand-verified byte-for-byte against 80 real segments, zero mismatches).
+  - `discontinuity` and `program_date_time_ms` are both documented as weak, origin-dependent signals — a
+    real spike found neither HLS's `#EXT-X-DISCONTINUITY` nor Program-Date-Time is ever set automatically;
+    both require explicit origin-side configuration (ffmpeg's `-hls_flags +discont_start`,
+    `#EXT-X-PROGRAM-DATE-TIME`) that a genuine encoder restart produced zero tags for, in a real test,
+    without that flag. A consumer cannot treat `discontinuity=False` as a guarantee of contiguity, nor use
+    `program_date_time_ms` for ordering — `sequence` is the only ordering mechanism.
+  - `received_at_ns` mirrors `MediaFrame.received_at_ns`'s exact reasoning (fetch-latency/dwell-time
+    metrics, distinct from the manifest-provided timeline fields).
+
+### Documentation
+
+- **ADR-010** records this addition, including both spike findings.
+- `docs/technical/architecture/adrs/index.md` updated to include ADR-010.
+
+3 new tests (`tests/test_media.py`). Full suite: 457 passing (up from 454).
+
+---
+
+## v3.9.0 — 2026-10-19
+
+### Added — `openframe.core.media` (ADR-009)
+
+A shared frame vocabulary ahead of `openframe-protocol-media` (RTMP ingest,
+HLS/DASH delivery), which carries high-density binary audio/video packets
+and needs a frame type a future, separate
+`openframe-adapters-media-ffmpeg` package can also import. The shared type
+has to live in core — putting it in the protocol package would force the
+adapters package to depend on it (or the reverse), inverting the
+dependency direction between two sibling families that otherwise have no
+reason to know about each other.
+
+- **`openframe.core.media.MediaKind`** — closed `StrEnum`: `VIDEO`,
+  `AUDIO`, `METADATA` (reserved for a future gap/discontinuity marker;
+  nothing emits it yet). A genuinely closed, small set — structural
+  categories of a media session, unlike codecs.
+- **`openframe.core.media.MediaFrame`** — frozen dataclass: `kind`,
+  `payload: bytes`, `timestamp_ms`, `is_keyframe: bool = False`,
+  `is_config: bool = False`, `codec: str | None = None`,
+  `track: str = "default"`, `received_at_ns: int = 0`.
+  - `payload` is deliberately `bytes`, not `memoryview` — a producer
+    (e.g. pyrtmp) hands back a payload sliced from a buffer it may reuse,
+    and frames are expected to outlive the callback that created them
+    (they typically sit in a queue); a `memoryview` into a reused buffer
+    would be a use-after-free class of bug.
+  - `codec` is deliberately a plain `str | None`, not a closed enum —
+    codecs proliferate (h264, hevc, av1, aac, opus, ...) and a closed
+    enum in core would demand a core release per new codec. Mirrors this
+    repo's own existing precedent for `openframe.core.exceptions.codes.
+    ErrorCode`, which is typed `str` for exactly the same reason.
+  - `is_config` is kept separate from `is_keyframe` and is the *stronger*
+    invariant — dropping a config/sequence-header frame can make an
+    entire stream undecodable, not merely corrupt until the next
+    keyframe. Any future consumer that sheds frames under backpressure
+    must never drop a frame where `is_config=True`.
+  - `track` defaults to `"default"`, anticipating multi-bitrate/
+    multi-audio-track support without building it now.
+  - `received_at_ns` (`time.perf_counter_ns()` at arrival) is the only
+    way a consumer can measure queue dwell time.
+  - No `BasePort`/`Capability` involvement — same "focused new concept
+    module" shape as `openframe.core.remote` (v3.7.0).
+  - Marked `.. stability: experimental`.
+
+### Added — `Transportation` (ADR-009)
+
+- **`openframe.core.ports.Transportation`** — closed `str` `Enum`, same
+  shape as `Capability` (`class X(str, Enum)`, `__str__` returns
+  `.value`). Ten members: the six already-shipped transports (`HTTP`,
+  `GRPC`, `SSE`, `WEBSOCKET`, `WEBHOOK`, `QUIC`) plus four
+  media-adjacent ones (`RTMP`, `RTSP`, `HLS`, `DASH`) anticipated by
+  `openframe-protocol-media` and friends. `RTSP` is documented as
+  "reserved — no server implementation ships yet," since no Python RTSP
+  server library exists and none is being built soon.
+- Originally proposed in an `openframe-protocol` design spec years
+  before any transport shipped, and never built — six transports shipped
+  without it because nothing forced it to exist. Added now, purely
+  additively, with zero current consumers, as the transport family grows
+  (RTMP/HLS/DASH joining the existing six) and cross-transport naming
+  starts to matter.
+- **`Capability.TRANSPORT`'s removal, which an old design doc bundled
+  with adding this enum, is deliberately deferred.** `Capability.
+  TRANSPORT` is untouched — not deprecated, not referenced from
+  `Transportation`. Removing a member from a closed enum like
+  `Capability` is a breaking change requiring a future major version;
+  out of scope for this additive release. See ADR-009 for the full
+  reasoning on both additions.
+
+### Documentation
+
+- **ADR-009** records both decisions above, including the deferred
+  `Capability.TRANSPORT` removal.
+- `docs/technical/architecture/adrs/index.md` updated to include
+  ADR-008 (previously missing) and the new ADR-009.
+
+9 new tests (`tests/test_media.py`, plus `Transportation` coverage added
+to `tests/test_ports_primitives.py`). Full suite: 454 passing (up from
+445).
+
+---
+
 ## v3.8.0 — 2026-10-17
 
 ### Added — `SessionHandler`/`Session`/`CloseReason` (ADR-008)
